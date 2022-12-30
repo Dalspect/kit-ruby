@@ -1,0 +1,103 @@
+<%= content_for :page_title do %>
+  Copy Assignment To <%= @klass ? (@klass.course.title + " " + @klass.semester + " section " + @klass.section.to_s) : @course.title %>
+<% end %>
+
+<ol class="breadcrumb">
+  <% if @klass %>
+    <li><%= link_to 'Classes', klasses_path %></li>
+    <li><%= link_to (@klass.course.course_code+" "+@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s),  klass_assignments_path(@klass) %></li>
+  <% else %>
+    <li><%= link_to 'Courses', courses_path %></li>
+    <li><%= link_to (@course.course_code+" "+@course.title), @course %></li>
+  <% end %>
+  <li class="active">Copy Assignment</li>
+</ol>
+
+<%# Only show courses and classes that user has admin permission for %>
+
+<div class="panel-group">
+  <% Department.select{|d| current_user.admin? || d.is_department_professor?(current_user)}.each do |d| %>
+	<div class="panel panel-default">
+	  <div class="panel-heading">
+		<h4 class="panel-title">
+		  <a data-toggle="collapse" href="#<%= "d"+d.id.to_s %>"><strong><%= d.title + " department courses" %><span class="caret"></span></strong></a>
+		</h4>
+	  </div>
+	  <div id="<%= "d"+d.id.to_s %>" class="panel-collapse collapse in">
+		<div class="panel-body">
+		  
+		  <% d.courses.each do |c| %>
+			<div class="panel panel-default">
+			  <div class="panel-heading">
+				<h4 class="panel-title">
+				  <a data-toggle="collapse" href="#<%= "c"+c.id.to_s %>"><strong><%= c.title + " " + c.course_code + " assignments"%><span class="caret"></span></strong></a>
+				</h4>
+			  </div>
+			  <div id="<%= "c"+c.id.to_s %>" class="panel-collapse collapse">
+				<div class="panel-body">
+				  
+				  <table class="table table-hover">
+				    <thead></thead>
+					<tbody>
+					  <% c.assignment.each do |a| %>
+					    <tr>
+						  <td><%= a.title %></td>
+						  <td>
+						    <% if @course %>
+							  <%= link_to "Copy", new_assignment_path(course: @course.id, copy: a.id), class: "btn btn-success" %>
+							<% else %>
+							  <%= link_to "Copy", new_assignment_path(class: @klass.id, copy: a.id), class: "btn btn-success" %>
+							<% end %>
+						  </td>
+						</tr>
+					  <% end %>
+					</tbody>
+				  </table>
+				  
+				</div>
+			  </div>
+			</div>
+		  <% end %>
+			  
+		</div>
+	  </div>
+	</div>
+  <% end %>
+</div>
+
+<div class="panel-group">
+  <% Klass.all.each do |c| %>
+	<% if c.is_class_admin?(current_user) %>
+	  <div class="panel panel-default">
+		<div class="panel-heading">
+		  <h4 class="panel-title">
+			<a data-toggle="collapse" href="#<%= "k"+c.id.to_s %>"><strong><%= c.course.title + " " + c.course.course_code + " " + c.semester + " section " + c.section.to_s + " assignments" %><span class="caret"></span></strong></a>
+		  </h4>
+		</div>
+		<div id="<%= "k"+c.id.to_s %>" class="panel-collapse collapse">
+		  <div class="panel-body">
+		  
+			<table class="table table-hover">
+			  <thead></thead>
+			  <tbody>
+				<% c.assignment.each do |a| %>
+				  <tr>
+					<td><%= a.title %></td>
+					<td>
+					  <% if @course %>
+						<%= link_to "Copy", new_assignment_path(course: @course.id, copy: a.id), class: "btn btn-success" %>
+					  <% else %>
+						<%= link_to "Copy", new_assignment_path(class: @klass.id, copy: a.id), class: "btn btn-success" %>
+					  <% end %>
+					</td>
+				  </tr>
+				<% end %>
+			  </tbody>
+			</table>
+		  
+		  </div>
+		</div>
+	  </div>
+	<% end %>
+  <% end %>
+</div>

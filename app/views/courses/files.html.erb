@@ -1,0 +1,12 @@
+<%= content_for :page_title do %>
+  <%= @course.title %> | Files
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'course_crumbs', course: @course %>
+  <li class="active">Files</li>
+</ol>
+
+<%= render 'tabs', current: :files %>
+
+<%= render 'repos/repos_files_editor', repo: @course.repo, title: "Course Files- available to all classes in this course", return_url: course_files_path(@course), edit: true %>

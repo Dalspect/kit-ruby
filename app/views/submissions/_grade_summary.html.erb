@@ -1,0 +1,64 @@
+<%# Display a summary of how grade was calculated & final grade. Note: Not used for actual calculation! %>
+
+<h4><b>Grade Summary</b></h4>
+<table class="table table-striped">
+  <tbody>
+    <%# Store score so far as variable to avoid extra SQL calls and simplify code %>
+    <% score = submission.get_raw_grade_points %>
+	<% max_score = submission.assigned.get_unscaled_max_grade %>
+	<% if submission.assigned.max_points_override %>
+	  <tr>
+	    <td align="right"> Maximum points overridden to: </td>
+		<td><%= max_score %></td>
+	  </tr>
+	<% end %>
+	<% unless submission.point_override %>
+      <tr>
+	    <td align="right">Total Points from Problems:</td>
+	    <td><%= score %> / <%= max_score %></td>
+	  </tr>
+	  <% if submission.point_adjustment %>
+	    <% score = score + submission.point_adjustment %>
+	    <tr>
+	      <td align="right"> + Overall Point Adjustment:</td>
+	      <td><%= submission.point_adjustment %> points</td>
+	    </tr>
+	    <tr>
+	      <td align="right"> = </td>
+		  <td> <%= score %> / <%= max_score %> </td>
+	    </tr>
+	  <% end %>
+	<% else %>
+	  <tr>
+	    <td align="right"> Score overridden to: </td>
+		<td><%= submission.point_adjustment %></td>
+	  </tr>
+	<% end %>
+	
+	<% if submission.percent_modifier != 100 %>
+	  <% score *= (submission.percent_modifier/100) %>
+	  <tr>
+	    <td align="right"> * Overall Percent Adjustment </td>
+		<td> <%= submission.percent_modifier %>% </td>
+	  </tr>
+	  <tr>
+	    <td align="right"> = </td>
+		<td> <%= score %> / <%= max_score %> </td>
+	  </tr>
+	<% end %>
+	<% if submission.assigned.point_value_scale %>
+	  <tr>
+	    <td align="right"> Assignment scaled to be worth: </td>
+		<td> <%= submission.assigned.point_value_scale %> points </td>
+	  </tr>
+	  <tr>
+	    <td align="right"> = </td>
+		<td> <%= submission.get_adjusted_grade_points %> / <%= submission.assigned.point_value_scale %> </td>
+	  </tr>
+	<% end %>
+	<tr>
+	</tr>
+  </tbody>
+</table>
+
+<h3> Final Grade: <%= submission.get_adjusted_grade_points %> / <%= submission.assigned.get_adjusted_max_grade %> points (<%= submission.get_grade_percent.round(2) %>%) </h3>

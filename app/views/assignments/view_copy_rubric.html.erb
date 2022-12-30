@@ -1,0 +1,93 @@
+<%= content_for :page_title do %>
+  Copy Rubric To <%= @assignment.title %>
+<% end %>
+
+<ol class="breadcrumb">
+  <% if @assignment.klass %>
+    <li><%= link_to 'Classes', klasses_path %></li>
+    <li><%= link_to (@assignment.klass.course.course_code+" "+@assignment.klass.course.title+": "+@assignment.klass.semester+" "+@assignment.klass.section.to_s),  klass_assignments_path(@assignment.klass) %></li>
+  <% else %>
+    <li><%= link_to 'Courses', courses_path %></li>
+    <li><%= link_to (@assignment.course.course_code+" "+@assignment.course.title), @assignment.course %></li>
+  <% end %>
+  <li class="active"><%= link_to @assignment.title, @assignment %></li>
+  <li class="active">Copy Rubric</li>
+</ol>
+
+<h2> Copy these problems: </h2>
+
+<%= form_with(url: assignment_copy_rubric_path(@assignment), method: :post) do |form| %>
+
+	<%= form.fields_for "problems" do |problems| %>
+
+		<%# Only show courses and classes that user has admin permission for %>
+		
+		<div class="panel-group">
+		  <% Department.select{|d| current_user.admin? || d.is_department_professor?(current_user)}.each do |d| %>
+		    <div class="panel panel-default">
+			  <div class="panel-heading">
+			    <h4 class="panel-title">
+				  <a data-toggle="collapse" href="#<%= "d"+d.id.to_s %>"><strong><%= d.title + " department courses" %><span class="caret"></span></strong></a>
+			    </h4>
+			  </div>
+			  <div id="<%= "d"+d.id.to_s %>" class="panel-collapse collapse in">
+			    <div class="panel-body">
+			      
+				  <% d.courses.each do |c| %>
+				    <div class="panel panel-default">
+					  <div class="panel-heading">
+						<h4 class="panel-title">
+						  <a data-toggle="collapse" href="#<%= "c"+c.id.to_s %>"><strong><%= c.title + " " + c.course_code + " assignments"%><span class="caret"></span></strong></a>
+						</h4>
+					  </div>
+					  <div id="<%= "c"+c.id.to_s %>" class="panel-collapse collapse">
+						<div class="panel-body">
+						  
+						  <% c.assignment.each do |a| %>
+						    <%= render 'copy_from_assignment', problems: problems, a: a %>
+						  <% end %>
+						  
+						</div>
+					  </div>
+					</div>
+				  <% end %>
+					  
+			    </div>
+			  </div>
+		    </div>
+		  <% end %>
+		</div>
+		
+		<div class="panel-group">
+		  <% Klass.all.each do |c| %>
+		    <% if c.is_class_admin?(current_user) %>
+			  <div class="panel panel-default">
+			    <div class="panel-heading">
+				  <h4 class="panel-title">
+				    <a data-toggle="collapse" href="#<%= "k"+c.id.to_s %>"><strong><%= c.course.title + " " + c.course.course_code + " " + c.semester + " section " + c.section.to_s + " assignments" %><span class="caret"></span></strong></a>
+				  </h4>
+			    </div>
+			    <div id="<%= "k"+c.id.to_s %>" class="panel-collapse collapse">
+				  <div class="panel-body">
+				  
+				    <% c.assignment.each do |a| %>
+				      <%= render 'copy_from_assignment', problems: problems, a: a %>
+				    <% end %>
+				  
+				  </div>
+			    </div>
+			  </div>
+		    <% end %>
+		  <% end %>
+		</div>
+		
+	<% end %>
+
+
+	<h2> To: <%= @assignment.title %> </h2>
+
+	<div class="actions">
+	  <%= form.submit "Copy", class: "btn btn-success" %>
+	</div>
+
+<% end %>

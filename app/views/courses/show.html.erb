@@ -1,0 +1,43 @@
+<%= content_for :page_title do %>
+  <%= @course.title %> | Assignments
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'course_crumbs', course: @course %>
+  <li class="active">Assignments</li>
+</ol>
+
+<%= render 'tabs', current: :assignments %>
+
+<p>
+  <table class="table table-hover">
+	<thead>
+	  <tr>
+		<td>Assignment</td>
+		<td>Category</td>
+		<td>Points</td>
+		<td>Type</td>
+	  </tr>
+	</thead>
+	<tbody>
+	  <% @course.assignment.each do |a| %>
+		<tr>
+		  <td><%= link_to a.title, a%></td>
+		  <td><%= a.grade_category ? a.grade_category.title : "None" %></td>
+		  <td><%= a.get_point_value %></td>
+		  <td><%= a.assignment_type.humanize %></td>
+		</tr>
+	  <% end %>
+	</tbody>
+  </table>
+</p>
+
+<p>
+  <%= link_to new_assignment_path(course: @course.id), class: "btn btn-success" do %>
+    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span><span class="glyphicon glyphicon-file" aria-hidden="true"></span> New Assignment
+  <% end %>
+  <%= link_to show_copy_assignment_path(course: @course.id), class: "btn btn-primary" do %>
+    <span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span> Copy Assignment
+  <% end %>
+</p>
+

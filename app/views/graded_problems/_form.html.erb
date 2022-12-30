@@ -1,0 +1,42 @@
+<%= form_with(model: graded_problem, local: true) do |form| %>
+  <% if graded_problem.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(graded_problem.errors.count, "error") %> prohibited this graded_problem from being saved:</h2>
+
+      <ul>
+      <% graded_problem.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :problem_id %>
+    <%= form.text_field :problem_id %>
+  </div>
+
+  <div class="field">
+    <%= form.label :submission_id %>
+    <%= form.text_field :submission_id %>
+  </div>
+
+  <div class="field">
+    <%= form.label :comments %>
+    <%= form.text_area :comments %>
+  </div>
+
+  <div class="field">
+    <%= form.label :point_adjustment %>
+    <%= form.text_field :point_adjustment %>
+  </div>
+
+  <div class="field">
+    <%= form.label :grader_id %>
+    <%= form.text_field :grader_id %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit %>
+  </div>
+<% end %>

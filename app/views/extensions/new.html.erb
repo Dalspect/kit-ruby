@@ -1,0 +1,18 @@
+<%= content_for :page_title do %>
+  Granting Extension
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assigneds/grading_crumbs', assigned: @extension.assigned %>
+  <li><%= link_to "Submissions", submissions_path(assigned: @extension.assigned) %></li>
+  <li class="active"> Granting <%=@extension.user.get_full_preferred_name %> an extension </li>
+  </li>
+</ol>
+
+<%= render 'form', extension: @extension %>
+
+<br>
+
+<% if (current_user.get_professor_classes.include?(@extension.assigned.klass) || current_user.admin?) %>
+  <%= link_to "View Student", @extension.user.students.select{|s| s.klass==@extension.assigned.klass}.first, class: "btn btn-default" %>
+<% end %>

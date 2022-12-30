@@ -1,0 +1,24 @@
+<%= content_for :page_title do %>
+  New Grade Category
+<% end %>
+
+<% if @grade_category.klass %>
+    <% k = @grade_category.klass %>
+	<ol class="breadcrumb">
+	  <li><%= link_to 'Classes', klasses_path %></li>
+	  <li><%= (k.course.course_code+" "+k.course.title+": "+k.semester+" "+k.section.to_s) %></li>
+	  <li><%= link_to 'Settings', edit_klass_path(k) %></li>
+	  <li class="active">New Grade Category </li>
+	</ol>
+<% else %>
+	<% c = @grade_category.course %>
+	<ol class="breadcrumb">
+      <li><%= link_to 'Courses', courses_path %></li>
+      <li><%= link_to (c.course_code + " " + c.title), c%></li>
+	  <li class="active">New Grade Category </li>
+	</ol>
+<% end %>
+
+<h1>New Grade Category</h1>
+
+<%= render 'form', grade_category: @grade_category %>

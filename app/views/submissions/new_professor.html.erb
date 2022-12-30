@@ -1,0 +1,55 @@
+<%= content_for :page_title do %>
+  Upload for <%= @submission.assigned.assignment.title %>  
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assigneds/grading_crumbs', assigned: @submission.assigned %>
+  <li><%= link_to "Submissions", submissions_path(assigned: @submission.assigned) %></li>
+  <li class="active"> Upload For <%= @user.get_full_preferred_name %></li>
+</ol>
+
+<h1>Uploading <%= @submission.assigned.assignment.title %> for <%= @user.get_full_preferred_name %></h1>
+
+<% case @submission.assigned.assignment.assignment_type %>
+<% when "student_file", "professor_file" %>
+  
+    <%= form_with(model: @submission, url: submission_professor_upload_path(user: @user, assigned: @assigned)) do |form| %>
+	  <% if @submission.errors.any? %>
+		<div class="alert alert-danger">
+		  <h2><%= pluralize(@submission.errors.count, "error") %> prohibited this submission:</h2>
+
+		  <ul>
+		  <% @submission.errors.full_messages.each do |message| %>
+			<li><%= message %></li>
+		  <% end %>
+		  </ul>
+		</div>
+	  <% end %>
+	  
+	  
+	  <div class="well">
+	    <h3><%= form.label "Upload Files:" %></h3>
+        You can select multiple files to upload by holding Ctrl (Windows), Command (Mac), or another key depending on your system.
+    
+	    <div class="form-group">
+          <%= form.label "Upload Files:" %>
+          <%= form.file_field :files, class: "form-control", autofocus: true, multiple: true %>
+	    </div>
+	  </div>
+	  
+	  <h2><center> And/Or </center></h2>
+	  
+	  <div class="well">
+	    <%= render "url_adder", form: form, max_urls: 0 %>
+      </div>
+	  
+      <div class="form-group">
+        <%= form.check_box :is_feedback %>
+        <%= form.label "Feedback Files?" %>
+	  </div>
+		
+	  <div class="actions">
+		<%= form.submit "Upload", class: "btn btn-success" %>
+	  </div>
+	<% end %>
+<% end %>

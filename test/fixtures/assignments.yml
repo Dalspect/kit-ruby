@@ -1,0 +1,17 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  title: MyString
+  klass: one
+  course: one
+  grade_category: one
+  files_repo: one
+  template_repo: one
+
+two:
+  title: MyString
+  klass: two
+  course: two
+  grade_category: two
+  files_repo: two
+  template_repo: two

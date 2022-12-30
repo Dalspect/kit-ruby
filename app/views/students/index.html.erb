@@ -1,0 +1,174 @@
+
+<%= content_for :page_title do %>
+  <%=(@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s)%> | Students
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= (@klass.course.course_code+" "+@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s)%></li>
+  <li class="active">Students</li>
+</ol>
+
+<%= render 'klasses/tabs', current: :students, klass: @klass %>
+
+<br>
+
+<div class="panel panel-default">
+  <div class="panel-heading"><h4 class="panel-title"><strong>Add Students</strong></h4></div>
+  <div class="panel-body">
+	<%= form_with url: students_path, method: :create, class: 'form-inline' do |form| %>
+	  <div class="form-group">
+		<%= form.label "Emails (separate multiple with commas)" %>
+		<%= form.text_field :emails, class: "form-control" %>
+	  </div>
+
+	  <div class="form-group">
+		<%= form.hidden_field :klass_id, value: @klass.id %>
+	  </div>
+
+	  <div class="form-group">
+		<%= form.submit "Add Student", class: "btn btn-success" %>
+	  </div>
+	<% end %>
+
+  </div>
+</div>
+
+<center><h3>Students</h3></center>
+
+<p>
+  <table class="table table-hover" data-toggle="table" data-classes="table-no-bordered" data-search="true">
+	<thead>
+	  <tr>
+		<th data-sort-name="_name_data.raw-name" data-sortable="true" data-field="name">Name</th>
+		<th data-sortable="true" data-field="email">Email</th>
+		<th>Assignment Statuses</th>
+		<th>Assignment Grades</th>
+		<th data-sort-name="_grade_data.raw-grade" data-sortable="true" data-field="grade">Class Grade</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  <% @klass.students.each do |s| %>
+		<tr>
+		  <% n = s.user.get_full_name %>
+		  <td data-raw-name=<%=n%>><%= link_to n, s %></td>
+		  <td><%= mail_to s.user.email %></td>
+		  
+		  <%# Collect status of submissions for each assignment %>
+		  <% graded = 0 %>
+		  <% regrade = 0 %>
+		  <% to_grade = 0 %>
+		  <% no_rubric = 0%>
+		  <% overdue = 0 %>
+		  <% not_submitted = 0 %>
+		  <% grades = [] %>
+		  
+		  <% @assigneds.each do |ad| %>
+		    <% sub = ad.get_user_submission(s.user) %>
+			<% if sub %>
+			  <% if sub.graded? %>
+			    <% grades.push(sub.get_grade_percent/100) %>
+				<% if sub.has_active_regrade_request? %>
+				  <% regrade+=1 %>
+				<% else %>
+				  <% graded+=1 %>
+				<% end %>
+			  <% elsif ad.assignment.problems.length==0 %>
+			    <% no_rubric+=1 %>
+			  <% elsif sub.turned_in? %>
+			    <% to_grade+=1 %>
+			  <% else %>
+			    <% if ad.overdue_for?(s.user) %>
+				  <% overdue+=1 %>
+				<% else %>
+				  <% not_submitted+=1 %>
+				<% end %>
+			  <% end %>
+			<% else %>
+			  <% if ad.overdue_for?(s.user) %>
+				<% overdue+=1 %>
+			  <% else %>
+				<% not_submitted+=1 %>
+			  <% end %>
+			<% end %>
+			
+		  <% end %>
+		  
+		  <td>
+		    <div class="progress">
+			 <% max = @assigneds.length %>
+			 
+			 <% if regrade > 0 %> 
+			  <div class="progress-bar progress-bar-primary" role="progressbar" aria-valuenow=<%=regrade%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (regrade.to_f/max*100).to_s + "%"%>>
+				<%= regrade %> regrade requests
+			  </div>
+			 <% end %>
+			 
+			 <% if graded > 0 %> 
+			  <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow=<%=graded%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (graded.to_f/max*100).to_s + "%"%>>
+				<%= graded %> graded
+			  </div>
+			 <% end %>
+			  
+			 <% if to_grade > 0 %>
+			  <div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow=<%=to_grade%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (to_grade.to_f/max*100).to_s + "%"%>>
+				<%= to_grade %> ready to grade
+			  </div>
+			 <% end %>
+			 
+			 <% if no_rubric > 0 %>
+			  <div class="progress-bar progress-bar" role="progressbar" aria-valuenow=<%=no_rubric%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (no_rubric.to_f/max*100).to_s + "%;background-color:darkgrey"%>>
+				<%= no_rubric %> without rubric
+			  </div>
+			 <% end %>
+			  
+			 <% if overdue > 0 %>
+			  <div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow=<%=overdue%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (overdue.to_f/max*100).to_s + "%"%>>
+				<%= overdue %> overdue
+			  </div>
+			 <% end %>
+			 
+			 <% if not_submitted > 0 %>
+			  <div>
+				<center><%= not_submitted %> missing</center>
+			  </div>
+			 <% end %>
+			  
+			</div>
+		  </td>
+		  
+		  <td>
+		    <div class="progress">
+		      <% grades.each do |grade| %>
+			  
+			  <div class="progress-bar" role="progressbar" style=<%= "width:" + (1.0/grades.length*100).to_s + "%;background-color:"+get_color_for_grade(grade)  %>>
+			  </div>
+			  
+			 <% end %>
+			</div>
+		  </td>
+		  
+		  <% g = @klass.get_student_grade_percent(s.user) %>
+		  <td data-raw-grade=<%=g%>>
+		    <div class="progress" style="position: relative; text-align: center">
+			  <div class="progress-bar" role="progressbar" aria-hidden="true" style=<%= "width:" + g.to_s + "%;background-color:"+get_color_for_grade(g/100.0)%>></div>
+		      <span style="position:absolute; left: 0; right: 0">
+			    <%= g.round(2).to_s+"%" %>
+			  </span>
+		    </div>
+		    
+		  </td>
+		  
+		</tr>
+	  <% end %>
+	</tbody>
+  </table>
+  
+  
+  <center>
+    <%= mail_to @klass.students.map{|s| s.user.email}.join(","), "Email All Students", class: "btn btn-default" %>
+  </center>
+</p>
+
+
+<%= render "layouts/fix_turbolink_tables" %>

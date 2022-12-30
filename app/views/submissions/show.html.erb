@@ -1,0 +1,272 @@
+<%= content_for :page_title do %>
+  Submission for <%= @submission.assigned.assignment.title %>
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= link_to (@submission.assigned.klass.course.course_code+" "+@submission.assigned.klass.course.title+": "+@submission.assigned.klass.semester+" "+@submission.assigned.klass.section.to_s), @submission.assigned.klass %></li>
+  <li><%= @submission.assigned.assignment.title %></li>
+  <li class="active">View Submission</li>
+</ol>
+
+
+<h2>Submission for <%= @submission.assigned.assignment.title %></h2>
+
+<%= simple_format @submission.assigned.assignment.description %>
+
+<%= render 'repos/directory_browser', repo: @submission.assigned.assignment.files_repo, prepend: ["student"], title: "Provided Files", return_url: submission_path(@submission) %>
+
+<h4><%= pluralize(@submission.contributors.count+@submission.past_contributors.count, "Contributor") %>:</h4>
+<ul>
+<% @submission.contributors.each do |c| %>
+  <li><%= c.user.get_full_preferred_name %></li>
+<% end %>
+<% @submission.past_contributors.each do |c| %>
+  <li><s><%= c.user.get_full_preferred_name %></s> (removed)</li>
+<% end %>
+</ul>
+
+<%= render 'file_or_repo_link', submission: @submission %>
+
+<br>
+
+<% unless @submission.blank? || @submission.professor_uploaded? %>
+  <% if @submission.turned_in? && (@submission.assigned.assignment.assignment_type == "student_file" || @submission.assigned.assignment.assignment_type == "student_repo") %>
+    Turned in: <%= @submission.get_time_turned_in.strftime("%A, %b %d at %I:%M%p") %>
+    <br>
+	<%= render 'lateness_label', submission: @submission %>
+  <% end %>
+<% end %>
+
+
+
+<br><br>
+
+<% if @submission.assigned.assignment.student_file? %>
+  Resubmission policy:<br>
+  
+  <% source = nil %>
+
+  <% exts = current_user.extensions.where(assigned: @submission.assigned) %>
+  <% if exts.any? %>
+	  <% source = exts.first %>
+	  You have an extension on this assignment.<br>
+  <% else %>
+	  <% source = @submission.assigned %>
+  <% end %>
+  
+  <% case source.allow_resubmissions %>
+	<% when "never_resubmit" %>
+	  Resubmissions not allowed
+	<% when "resubmit_before_deadline" %>
+	  Resubmission allowed before deadline
+	<% when "resubmit_before_graded" %>
+	  Resubmission allowed until assignment is graded
+	<% when "resubmit_even_after_graded" %>
+	  Resubmission allowed
+	<% end %>
+	<br>
+  <% if source.limit_resubmissions %>
+	Limited to <%= source.resubmission_limit %> resubmissions
+  <% end %>
+  
+  <% if @submission.force_allow_resubmit? %>
+    <b>Policy overridden- resubmission allowed!</b>
+  <% end %>
+  
+  <br>
+  
+  <% if @submission.assigned.student_can_submit?(current_user) %>
+	<%= link_to "Resubmit", new_submission_path(assigned: @submission.assigned), class: "btn btn-default" %>
+  <% end %>
+  
+<% elsif @submission.assigned.assignment.student_repo? %>
+  Restart policy:<br>
+  
+  <% source = nil %>
+
+  <% exts = current_user.extensions.where(assigned: @submission.assigned) %>
+  <% if exts.any? %>
+	  <% source = exts.first %>
+	  You have an extension on this assignment.<br>
+  <% else %>
+	  <% source = @submission.assigned %>
+  <% end %>
+  
+  <% case source.allow_resubmissions %>
+	<% when "never_resubmit" %>
+	  Restarting not allowed
+	<% when "resubmit_before_deadline" %>
+	  Restarting allowed before deadline
+	<% when "resubmit_before_graded" %>
+	  Restarting allowed until assignment is graded
+	<% when "resubmit_even_after_graded" %>
+	  Restarting allowed
+	<% end %>
+	<br>
+	<% if source.limit_resubmissions %>
+	  Limited to <%= source.resubmission_limit %> restarts
+	<% end %>
+	
+	<% if @submission.force_allow_resubmit? %>
+	  <b>Policy overridden- restart allowed!</b>
+	<% end %>
+	
+	<br>
+	  
+	<% if @submission.assigned.student_can_submit?(current_user) %>
+	  <%= link_to "Restart (creates new repository)", new_submission_path(assigned: @submission.assigned), class: "btn btn-default" %>
+    <% end %>
+<% end %>
+
+<br>
+
+
+
+<% if @submission.assigned.max_contributors > 1 %>
+	
+	<div class="panel-group">
+	  <div class="panel panel-default">
+		<div class="panel-heading">
+		  <h4 class="panel-title">
+			<a data-toggle="collapse" href="#invites"><strong>
+			<% if @submission.turned_in? %>
+			  I Worked With Someone Else<span class="caret"></span>
+			<% else %>
+			  I Am Working With Someone Else<span class="caret"></span>
+			<% end %>
+			</strong></a>
+		  </h4>
+		</div>
+		<div id="invites" class="panel-collapse collapse">
+		  <div class="panel-body">
+		  <p>
+		    If you worked with someone else, please select their name from the list below.
+			<b>This should only be used when you are turning in the same thing.
+			If you worked together but have separate things to submit, just make sure
+			you both include this information in your work.</b>
+		  </p>
+		  <p>
+		    Once you invite someone, they should click "Submit" from the assignment list as normal,
+			then select your invitation instead of submitting something.
+		  </p>
+		  Maximum contributors to one submission: <%= @submission.assigned.max_contributors %>
+		  
+		  <% already_invited = @submission.contributors.map{|c| c.user} %>
+		  
+		  <% if @submission.contributor_invites.any? %>
+		    <h3> Already invited: </h3>
+			<table class= "table table-hover">
+			  <thead>
+				<tr>
+				  <th>User</th>
+				  <th>Email</th>
+				  <th>Remove</th>
+				</tr>
+			  </thead>
+
+			  <tbody>
+				<% @submission.contributor_invites.each do |i| %>
+				  <% already_invited.append(i.user) %>
+				  <tr>
+					<td><%= i.user.get_full_preferred_name %></td>
+					<td><%= i.user.email %></td>
+					<td><%= link_to "Uninvite", i, method: :delete, data: {confirm: "Are you sure?"}, class: "btn btn-danger" %></td>
+				  </tr>
+				<% end %>
+			  </tbody>
+			</table>
+		  <% end %>
+			
+			
+		  <% if @submission.contributors.count + @submission.contributor_invites.count < @submission.assigned.max_contributors %>
+		    <h3> Invite another user: </h3>
+			<%# Get list of users in this class %>
+			<% possible_invites = @submission.assigned.klass.students.map{|s| s.user} - already_invited %>
+			
+			<table class= "table table-hover">
+			  <thead>
+				<tr>
+				  <th>User</th>
+				  <th>Email</th>
+				  <th>Add to submission</th>
+				</tr>
+			  </thead>
+
+			  <tbody>
+				<% possible_invites.each do |u| %>
+				  <tr>
+					<td><%= u.get_full_preferred_name %></td>
+					<td><%= u.email %></td>
+					<td>
+					  <%= form_with(scope: :contributor_invite, url: contributor_invites_path, method: :create) do |form| %>
+					    <%= form.hidden_field :user_id, value: u.id %>
+						<%= form.hidden_field :submission_id, value: @submission.id %>
+					    <div class="actions">
+						  <%= form.submit "Invite", class: "btn btn-success" %>
+					    </div>
+					  <% end %>
+					</td>
+				  </tr>
+				<% end %>
+			  </tbody>
+			</table>
+			
+			
+		  <% end %>
+		  
+		  </div>
+		</div>
+	  </div>
+	</div>
+<% end %>
+
+<% unless @submission.turned_in? %>
+  <%= link_to "Turn In", submission_turn_in_path(@submission), method: :post, data: {confirm: "Are you sure? This will indicate to graders that you are done with the assignment." }, class: "btn btn-success" %>
+<% end %>
+
+<% if @submission.graded? && !@submission.assigned.hide_grades? %>
+  <%= render 'feedback' %>
+  
+  <% if @submission.has_active_regrade_request? %>
+    <% request = @submission.regrade_requests.where(closed: false).first %>
+	<div class="panel panel-primary">
+	  <div class="panel-heading">
+	    Regrade request by <%= request.requested_by.get_preferred_first_name %> on <%= request.created_at.strftime("%A, %b %d at %I:%M %p") %>:
+	  </div>
+	  <div class="panel-body">
+	    <%= request.reason %>
+	  </div>
+	</div>
+	
+  <% else %>
+    <% if (@submission.contributors & current_user.contributors).any? %>
+		<button data-toggle="collapse" data-target="#request_regrade" class="btn btn-primary" onclick="this.style.display = 'none';">Request Regrade</button>
+		
+		<div id="request_regrade" class="collapse">
+		  <div class="panel panel-primary">
+			<div class="panel-body">
+			  <%= form_with( url: submission_create_regrade_request_path(@submission), method: :create) do |form| %>
+		
+				<div class="form-group">
+				  <%= form.label "Reason for request:" %>
+				  <%= form.text_area :reason, class: "form-control", placeholder: "Why does this need to be regraded?"  %>
+				</div>
+
+				<div class="actions">
+				  <%= form.submit "Submit Request", class: "btn btn-success" %>
+				</div>
+			  <% end %>
+			</div>
+		  </div>
+		</div>
+	<% end %>
+  <% end %>
+  
+  <%# previous requests %>
+  <%= render 'previous_regrade_requests' %>
+<% end %>
+
+<% if @submission.assigned.assignment.student_repo? && @submission.repo %>
+  <%= render 'repos/repo_commit_log', repo: @submission.repo %>
+<% end %>

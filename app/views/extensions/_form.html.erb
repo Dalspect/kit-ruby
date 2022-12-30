@@ -1,0 +1,39 @@
+<%= form_with(model: extension, local: true) do |form| %>
+  <% if extension.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(extension.errors.count, "error") %> prohibited this extension from being saved:</h2>
+
+      <ul>
+      <% extension.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.hidden_field :assigned_id %>
+	<%= form.hidden_field :user_id %>
+  
+  <div class="form-group">
+    <%= form.check_box :allow_late_submissions%>
+	<%= form.label "Allow first submission after deadline" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label "New Deadline" %>
+	<%= form.datetime_select :new_deadline, class: "form-control" %>
+  </div>
+  
+  <div class="form-group">
+    <%= form.check_box :use_deadline_as_due_date%>
+	<%= form.label "Use deadline as due date for this user" %>
+  </div>
+
+  <%= render 'assigneds/resubmission_fields', form: form, assigned: @assigned %>
+  
+  
+  <div class="actions">
+    <%= form.submit class: "btn btn-primary"%>
+  </div>
+<% end %>

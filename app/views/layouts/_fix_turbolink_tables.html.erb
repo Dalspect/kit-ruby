@@ -1,0 +1,34 @@
+<% content_for :for_head do %>
+  <%# <meta name="turbolinks-visit-control" content="no-cache"> %>
+  
+  <script>
+    // Clear Bootstrap Tables, since they don't work if loaded from the cache
+	//Turbolinks will only run this once because it is in the head, and the listener will stay active between pages
+    $(document).on("turbolinks:before-cache", function() {
+	  console.log("Clearing BT")
+	  $('[data-toggle="table"]').bootstrapTable('destroy')
+	});
+  </script>
+  
+<% end %>
+
+<%# Optional parameter for additional parameters to bootstrapTable() %>
+<% if local_assigns[:bst_params].nil? %>
+  <% bst_params = "" %>
+<% end %>
+
+<script>
+  // Need to make bootstrap-table load only when it isn't already loaded
+  // Turbolinks prevents it from loading naturally, but loading it through turbolinks:load 
+  // makes it duplicate the header/toolbar on returns to the same page
+  
+  // Using event listener causes the listener to be duplicated
+  // Using listener in the head means we can't use extra BT params, since the script won't be reloaded between pages
+  
+  // Call bootstrap-table on tables that haven't been set up
+  // Tables get a parent of class "bootstrap-table" after setup, so we can detect if the tables were loaded by other means
+  $('[data-toggle="table"]').filter(
+    function() {return $(this).parents('.bootstrap-table').length < 1;}
+  ).bootstrapTable({<%= bst_params %>});
+  
+</script>

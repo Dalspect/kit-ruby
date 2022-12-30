@@ -1,0 +1,12 @@
+Dear <%= @user.get_preferred_first_name() %>,
+
+You have been assigned to grade:
+ 
+<%= @assigned.assignment.title %>
+<% if @assigned.assignment.student_responsible? %>Due for students: <%=@assigned.due_date.strftime("%A, %b %d at %I:%M%p") %><% end %>
+
+for <%= @assigned.klass.course.title %>, section <%= @assigned.klass.section %> (<%= @assigned.klass.semester %>).
+
+You can view the assignment at <%= submissions_url(assigned: @assigned) %>
+
+<%= render 'notification_explanation' %>

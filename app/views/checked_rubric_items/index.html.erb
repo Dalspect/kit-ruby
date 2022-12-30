@@ -1,0 +1,29 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Checked Rubric Items</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Rubric item</th>
+      <th>Graded problem</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @checked_rubric_items.each do |checked_rubric_item| %>
+      <tr>
+        <td><%= checked_rubric_item.rubric_item %></td>
+        <td><%= checked_rubric_item.graded_problem %></td>
+        <td><%= link_to 'Show', checked_rubric_item %></td>
+        <td><%= link_to 'Edit', edit_checked_rubric_item_path(checked_rubric_item) %></td>
+        <td><%= link_to 'Destroy', checked_rubric_item, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Checked Rubric Item', new_checked_rubric_item_path %>

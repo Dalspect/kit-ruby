@@ -1,0 +1,32 @@
+<%= content_for :page_title do %>
+  SSH Keys
+<% end %>
+
+<h1>SSH Keys</h1>
+
+<p> SSH keys are used to authenticate your connection when working with git repositories. Once you enter your public key here, you will be able to use that command line to run git commands that connect to the Kit system.
+<br>
+A link to a help page will go here once we have added help pages. In the meantime, there are plenty of tutorials on generating SSH keys online. GitHub in particular has excellent tutorials for this because it does almost exactly what Kit does with SSH keys.
+</p>
+
+<table class="table table-hover">
+  <thead>
+    <tr>
+	  <th>Key</th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @ssh_keys.each do |ssh_key| %>
+      <tr>
+	    <td><%=ssh_key.label%>
+        <td><%= link_to 'Remove', ssh_key, method: :delete, data: { confirm: 'Are you sure?' }, class: "btn btn-danger" %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'Add SSH Key', new_ssh_key_path, class: "btn btn-primary" %>

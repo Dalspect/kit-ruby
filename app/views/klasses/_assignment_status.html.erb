@@ -1,0 +1,78 @@
+<%# Count number of submissions graded, ready to grade, overdue, and not turned in %>
+
+<% graded = 0 %>
+<% regrade_requested = 0 %>
+<% ready = 0 %>
+<% overdue = 0 %>
+<% not_in = 0 %>
+
+<% students = @student_users %>
+
+<% assigned.submissions.each do |s| %>
+  <% if (s.turned_in? || s.graded?) && s.contributors.any? %>
+    <% if s.graded? %>
+	  <% if s.has_active_regrade_request? %>
+	    <% regrade_requested += 1 %>
+	  <% else %>
+        <% graded += 1 %>
+	  <% end %>
+    <% else %>
+      <% ready += 1 %>
+    <% end %>
+  
+    <% s.contributors.each do |c| %>
+     <% students -= [c.user] %>
+    <% end %>
+  <% end %>
+<% end %>
+
+<%# Count overdue vs not %>
+<% students.each do |u| %>
+  <% if assignment.student_responsible? && assigned.overdue_for?(u) %>
+    <% overdue += 1 %>
+  <% else %>
+    <% not_in += 1 %>
+  <% end %>
+<% end %>
+
+<% max = graded + ready + overdue + not_in + regrade_requested %>
+
+<div class="progress">
+
+ <% if regrade_requested > 0 %> 
+  <div class="progress-bar progress-bar-primary" role="progressbar" aria-valuenow=<%= regrade_requested %> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (regrade_requested.to_f/max*100).to_s + "%"%>>
+    <%= regrade_requested %> regrade requested
+  </div>
+ <% end %>
+
+ <% if graded > 0 %> 
+  <div class="<%= "progress-bar progress-bar-success" + (assigned.hide_grades? ? " progress-bar-striped" : "") %>" role="progressbar" aria-valuenow=<%=graded%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (graded.to_f/max*100).to_s + "%"%>>
+    <%= graded %> graded<%=assigned.hide_grades? ? " (hidden)" : "" %>
+  </div>
+ <% end %>
+  
+ <% if ready > 0 %>
+  <% if assignment.problems.length != 0 %>
+    <div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow=<%=ready%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (ready.to_f/max*100).to_s + "%"%>>
+      <%= ready %> ready to grade
+    </div>
+  <% else %>
+    <div class="progress-bar" role="progressbar" aria-valuenow=<%=ready%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (ready.to_f/max*100).to_s + "%;background-color:darkgrey"%>>
+      <%= ready %> in, no rubric
+    </div>
+  <% end %>
+ <% end %>
+  
+ <% if overdue > 0 %>
+  <div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow=<%=overdue%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (overdue.to_f/max*100).to_s + "%"%>>
+    <%= overdue %> overdue
+  </div>
+ <% end %>
+ 
+ <% if not_in > 0 %>
+  <div>
+    <center><%= not_in %> missing</center>
+  </div>
+ <% end %>
+  
+</div>

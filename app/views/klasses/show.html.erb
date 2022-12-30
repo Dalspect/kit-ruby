@@ -1,0 +1,253 @@
+<%= content_for :page_title do %>
+  <%= (@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s) %>
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li class="active"><%= (@klass.course.course_code+" "+@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s) %></li>
+</ol>
+
+<center>
+<h1><%= @klass.course.title %></h1>
+<h4><%= @klass.semester %> section <%= @klass.section %></h4>
+</center>
+
+<% if @klass.is_class_admin?(current_user) %>
+    <center>
+	  This is the grader/student class view. 
+	  If you are neither of those and a link brought you here, please report it as a bug.
+	  <br>
+	  <%= link_to 'Go To Instructor View', klass_assignments_path(klass_id: @klass.id), class: "btn btn-default" %></center>
+	<hr>
+<% end %>
+
+<% if current_user.get_grader_classes.include?(@klass) %>
+	
+  <h2> Assignments to grade </h2>
+  <table class="table table-hover">
+    <thead>
+	  <tr>
+	    <th>Title</th>
+		<th>Due</th>
+	    <th>Status</th>
+		<th>Grade</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  <% @assigneds.each do |ad| %>
+	    <%# if ad.assigned_graders.map{|ag| ag.user}.include?(current_user) %>
+		  <tr>
+		    <td><%= ad.assignment.title %></td>
+			<td><%= ad.due_date.strftime("%A, %b %d at %I:%M%p") %></td>
+			<td width="40%"><%= render 'assignment_status', assigned: ad, assignment: ad.assignment %></td>
+			<td><%= link_to 'Grade', submissions_path(assigned: ad.id), class:  (ad.count_ungraded==0 ? "btn btn-default" : "btn btn-success") %></td>
+		  </tr>
+		<%# end %>
+	  <% end %>
+	</tbody>
+  </table>
+  
+  <h3> Files </h3>
+  
+  <% if @klass.course %>
+    
+	<%= render 'repos/directory_browser', repo: @klass.repo, prepend: ["student"], title: "Class Student Files", edit: false, return_url: klass_path(@klass), secondary: @klass.course.repo, open: true %>
+	
+    <%= render 'repos/directory_browser', repo: @klass.repo, prepend: ["grader"], title: "Class Grader Files", edit: false, return_url: klass_path(@klass), secondary: @klass.course.repo, open: true %>
+  
+  <% else %>
+    
+	<%= render 'repos/directory_browser', repo: @klass.repo, prepend: ["student"], title: "Class Student Files", edit: false, return_url: klass_path(@klass), open: true %>
+	
+    <%= render 'repos/directory_browser', repo: @klass.repo, prepend: ["grader"], title: "Class Grader Files", edit: false, return_url: klass_path(@klass), open: true %>
+  
+  <% end %>
+  <hr>
+<% end %>
+
+<% if current_user.get_student_classes.include?(@klass) %>
+	
+	<%= render "student_status_bar", assigneds: @klass.assigned %>
+	
+	<% if @klass.course %>
+	  <%= render 'repos/directory_browser', repo: @klass.repo, prepend: ["student"], title: "Class Files", edit: false, return_url: klass_path(@klass), secondary: @klass.course.repo, open: true %>
+	<% else %>
+	  <%= render 'repos/directory_browser', repo: @klass.repo, prepend: ["student"], title: "Class Files", edit: false, return_url: klass_path(@klass), open: true%>
+	<% end %>
+	
+	<h2> Assignments </h2>
+	<table class="table table-hover">
+	    <thead>
+			<tr>
+				<th>Title</th>
+				<th>Category</th>
+				<th>Due</th>
+				<th>Status</th>
+				<th>Submit</th>
+				<th style="width:20%">Grade</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			<% @klass.assigned.order(due_date: :desc).each do |ad| %>
+			  <% s = ad.get_user_submission(current_user) %>
+			  
+		<% if s %>
+		  <% feedback_seen = (s.contributors & current_user.contributors).first.feedback_seen? || !s.graded? || s.assigned.hide_grades? %>
+		  <% unless feedback_seen %>
+			  <tr class="info">
+		  <% else %>
+			  <tr>
+		  <% end %>
+		<% else %>
+			  <tr>
+		<% end %>
+		
+			    <td><%= ad.assignment.title %></td>
+				<td><%= ad.assignment.grade_category ? ad.assignment.grade_category.title : "None" %></td>
+			
+				<td><%= ad.get_user_due_date(current_user).strftime("%A, %b %d at %I:%M%p") %></td>
+				
+				
+				<% if s %>
+				  <% if s.graded? && !ad.hide_grades? %>
+				    <%# Graded Assignment %>
+					<td>
+					  <% if s.has_active_regrade_request? %>
+					    <p style="color:blue"><b>Regrade Requested</b></p>
+					  <% else %>
+					    <p style="color:blue">Graded</p>
+					  <% end %>
+					</td>
+					<td><%= link_to "Feedback", submission_path(s), class: (feedback_seen ? "btn btn-primary" : "btn btn-info") %></td>
+					<td>
+					  <%= render "submissions/submission_grade_bar", submission: s, assigned: ad %>
+					</td>
+				  <% else %>
+				    <%# Assignment is submitted or in progress, but not graded. %>
+				    
+					<% case ad.assignment.assignment_type %>
+				    <% when "student_file" %>
+				      <td><p style="color:green">Submitted</p></td>
+					  <td><%= link_to "View", submission_path(s), class: "btn btn-default" %>
+					  
+				    <% when "student_repo" %>
+				      <% if s.turned_in? %>
+					    <td><p style="color:green">Submitted</p></td>
+						<td><%= link_to "View", submission_path(s), class: "btn btn-default" %>
+					  <% elsif !ad.overdue_for?(current_user) %>
+					    <td><p style="color:orange">In Progress</p></td>
+					    <td><%= link_to "View & Submit", submission_path(s), class: "btn btn-warning" %>
+					  <% else %>
+					    <td><p style="color:red">In Progress, <b>Overdue</b></p></td>
+					    <td><%= link_to "View & Submit", submission_path(s), class: "btn btn-danger" %>
+					  <% end %>
+				    <% when "professor_file", "grade_only" %>
+				      <td>Not Graded</td>
+					  <td></td>
+				    <% end %>
+					
+					<td>
+					  <div class="progress" style="position: relative; text-align: center">
+					    <span style="position:absolute; left: 0; right: 0">
+						  -/<%= ad.get_adjusted_max_grade %>
+					    </span>
+					  </div>
+				    </td>
+				  
+				  <% end %>
+				<% else %>
+				  <%# No submission yet %>
+				
+				  <% case ad.assignment.assignment_type %>
+				  <% when "student_file" %>
+				    <% if ad.overdue_for?(current_user) %>
+					  <td><p style="color:red"><b>Overdue</b></p></td>
+					  
+					  <% if ad.student_can_submit?(current_user) %>
+					    <td><%= link_to "View & Submit", new_submission_path(assigned: ad.id), class: "btn btn-danger" %></td>
+					  <% else %>
+					    <td></td>
+					  <% end %>
+					  
+					<% else %>
+					  <%# Not overdue %>
+					  <td>Not Submitted</td>
+					  <td><%= link_to "View & Submit", new_submission_path(assigned: ad.id), class: "btn btn-warning" %></td>
+					<% end %>
+					
+				  <% when "student_repo" %>
+				    <% if ad.overdue_for?(current_user) %>
+					  <td><p style="color:red"><b>Overdue</b></p></td>
+					  
+					  <% if ad.student_can_submit?(current_user) %>
+					    <td><%= link_to "Start", new_submission_path(assigned: ad.id), class: "btn btn-danger" %></td>
+					  <% else %>
+					    <td></td>
+					  <% end %>
+					  
+					<% else %>
+					  <%# Not overdue %>
+					  <td>Not Started</td>
+					  <td><%= link_to "Start", new_submission_path(assigned: ad.id), class: "btn btn-warning" %></td>
+					<% end %>
+				  <% when "professor_file", "grade_only" %>
+				    <td>Not Graded</td>
+					<td></td>
+				  <% end %>
+				  
+				  <td>
+					<div class="progress" style="position: relative; text-align: center">
+					  <span style="position:absolute; left: 0; right: 0">
+						-/<%= ad.get_adjusted_max_grade %>
+					  </span>
+					</div>
+				  </td>
+				<% end %>
+				
+				<td>
+				  <% past_subs = current_user.past_contributors.select{|pc| pc.submission.assigned==ad} %>
+				  <% if past_subs.any? %>
+				    <div class="dropdown">
+				      <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Past Submissions<span class="caret"></span></a>
+				      <ul class="dropdown-menu">
+					    <% past_subs.each do |ps| %>
+					      <li><%= link_to ps.submission.created_at.to_s, submission_path(ps.submission) %></li>
+					    <% end %>
+					  </ul>
+				    </div>
+				  <% end %>
+				</td>
+			  </tr>
+			<% end %>
+		</tbody>
+	</table>
+	
+	<p>
+	<center><h3> Current Grade: <%= @klass.get_student_grade_percent(current_user).round(2) %>% </h3>
+	
+	<h4> Grade Summary: </h4>
+	<table class="table table-hover">
+	  <thead> 
+	    <tr>
+		  <th>Category</th>
+		  <th>Category Weight</th>
+		  <th>Points Earned</th>
+		  <th>Percent</th>
+		</tr>
+	  </thead>
+	  <tbody>
+	    <% @klass.get_grade_categories.each do |cat| %>
+		  <tr>
+		    <td> <%= cat.title %> </td>
+			<td> <%= cat.weight %>% </td>
+		    <td> <%= cat.get_category_grade_points(@klass, current_user) %>/<%= cat.get_category_max_points(@klass, current_user) %> </td>
+			<td> <%= (cat.get_category_grade_percent(@klass, current_user)*100).round(2) %>% </td>
+		  </tr>
+		<% end %>
+	  </tbody>
+	</table>
+	</p>
+	
+	
+<% end %>

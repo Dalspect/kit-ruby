@@ -1,0 +1,29 @@
+
+<%= content_for :page_title do %>
+  Departments
+<% end %>
+
+<h1>Departments</h1>
+
+<table class="table table-hover" data-toggle="table" data-classes="table-no-bordered" data-search="true">
+  <thead>
+    <tr>
+      <th>Title</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @departments.each do |department| %>
+      <tr>
+        <td><%= link_to department.title, department_courses_path(department) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Department', new_department_path, class: "btn btn-primary" %>
+
+
+<%= render "layouts/fix_turbolink_tables" %>

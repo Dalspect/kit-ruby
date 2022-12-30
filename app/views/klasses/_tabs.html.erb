@@ -1,0 +1,36 @@
+<center>
+  <h1><%= @klass.course.title %></h1>
+  <h4><%= @klass.semester %> section <%= @klass.section %></h4>
+</center>
+
+<ul class="nav nav-tabs">
+  
+  <li <%= current==:assignments ? "class=active" : "" %>>
+    <%= link_to klass_assignments_path(klass_id: klass.id) do %><span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span>  Assignments<% end %>
+  </li>
+  
+  <li <%= current==:students ? "class=active" : "" %>>
+    <%= link_to klass_students_path(klass_id: klass.id) do %><span class="glyphicon glyphicon-education" aria-hidden="true"></span>  Students<% end %>
+  </li>
+  
+  <li <%= current==:gradebook ? "class=active" : "" %>>
+    <%= link_to klass_gradebook_path(@klass) do %><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span>  Gradebook<% end %>
+  </li>
+  
+  <li <%= current==:files ? "class=active" : "" %>>
+    <%= link_to klass_files_path(klass_id: klass.id) do %><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>  Files<% end %>
+  </li>
+  
+  <li <%= current==:graders ? "class=active" : "" %>>
+    <%= link_to klass_graders_path(klass_id: klass.id) do %><span class="glyphicon glyphicon-ok" aria-hidden="true"></span>  Graders<% end %>
+  </li>
+  
+  <li <%= current==:settings ? "class=active" : "" %>>
+    <%= link_to edit_klass_path(@klass) do %><span class="glyphicon glyphicon-cog" aria-hidden="true"></span>  Settings<% end %>
+  </li>
+  
+  <% if @klass.course %>
+    <span class="pull-right"><%= link_to course_path(@klass.course), class: "btn btn-default" do %><span class="glyphicon glyphicon-book" aria-hidden="true"></span> Edit Course <% end %></span>
+  <% end %>
+  
+</ul>

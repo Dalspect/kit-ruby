@@ -1,0 +1,42 @@
+<%= content_for :page_title do %>
+  Bulk Upload  
+<% end %>
+
+<ol class="breadcrumb">
+ <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= link_to (@assigned.klass.course.course_code+" "+@assigned.klass.course.title+": "+@assigned.klass.semester+" "+@assigned.klass.section.to_s), klass_assignments_path(@assigned.klass) %></li>
+  <li><%= link_to @assigned.assignment.title, @assigned.assignment %></li>
+  <li><%= link_to "Submissions", submissions_path(assigned: @assigned) %></li>
+  <li class="active">
+    Upload Bulk Submissions
+  </li>
+</ol>
+
+<p>
+Upload mulitple submissions at once here. You will then need to go to the "Sort Bulk Submissions" page to match the files to their students.
+</p>
+
+<p>
+The process for uploading multiple files differs by browser and operating system, but typically when you click "browse" you can select multiple files by clicking and dragging or by holding the shift, control, or command keys when clicking files.
+
+Some browsers (in particular, outdated browsers or browsers designed for mobile devices) do not support uploading multiple files at a time.
+
+</p>
+
+<p>
+You can also upload bulk files by putting them in the "unsorted" directory in the repository <kbd><%= get_repo_url @assigned.repo %></kbd>, committing, and pushing.
+</p>
+
+<%= form_with(url: assignment_bulk_upload_path(@assigned.assignment, assigned: @assigned), method: :post) do |form| %>
+
+  <div class="form-group">
+	<%= form.label "Select Multiple Files:" %>
+	<%= form.file_field "files", class: "form-control", autofocus: true, multiple: true %>
+  </div>
+  
+  <div class="actions">
+	<%= form.submit "Upload", class: "btn btn-success" %>
+  </div>
+
+
+<% end %>

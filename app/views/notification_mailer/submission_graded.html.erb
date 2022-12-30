@@ -1,0 +1,8 @@
+<p>
+  Dear <%= @user.get_preferred_first_name() %>,
+  <br><br>
+  Your submission for <%= @submission.assigned.assignment.title %> in <%= @submission.assigned.klass.course.title %> has been graded.
+  <br><br>
+  You can view feedback on your submission <%= link_to "here", submission_url(@submission) %>.
+</p>
+<%= render 'notification_explanation' %>

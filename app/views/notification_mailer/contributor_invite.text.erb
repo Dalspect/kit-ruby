@@ -1,0 +1,7 @@
+Dear <%= @user.get_preferred_first_name() %>,
+
+You have been invited to work with <%= @submission.contributors.map{|c| c.user.get_preferred_first_name}.to_sentence %> on <%= @submission.assigned.assignment.title %>.
+
+You can accept or reject this invitation here: <%= new_submission_url(assigned: @assigned) %>
+
+<%= render 'notification_explanation' %>

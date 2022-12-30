@@ -1,0 +1,152 @@
+<%= form_with(model: assignment, local: true) do |form| %>
+  <% if assignment.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(assignment.errors.count, "error") %> prohibited this assignment from being saved:</h2>
+
+      <ul>
+      <% assignment.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.hidden_field :course_id, value: @assignment.course_id %>
+  </div>
+  
+  <div class="field">
+    <%= form.hidden_field :klass_id, value: @assignment.klass_id %>
+  </div>
+  
+  <div class="form-group">
+    <%= form.label :title %>
+    <%= form.text_field :title, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label "Description or Instructions"%>
+    <%= form.text_area :description, class: "form-control" %>
+  </div>
+  
+  <div class="form-group">
+    <%= form.label "Grade Category" %>
+    <%= form.select :grade_category_id, find_possible_grade_categories.map {|c| [c.title,c.id]}, {}, {class: "form-control"} %>
+  </div>
+  
+  <% if @allow_type %>
+	
+	<%# OOh, now I'm using JavaScript too! How fun! %>
+	<%# Client side javascript to show/hide allowed file types depending on assignment type %>
+	<script>
+	  function showOrHideFiletypes()
+	  {
+	    if(document.getElementById('assignmentTypeSelect').value=='student_file')
+		{
+		  document.getElementById("fileOrLinkDiv").style.display='';
+		  document.getElementById("fileLimit").style.display='';
+		  fol = document.getElementById('fileOrLinkSelect').value
+		  if(fol=='provide_urls_only')
+		  {
+		    document.getElementById("allowedFileTypes").style.display='none';
+			document.getElementById("limitLabel").innerText = "Maximum number of URLs (instructors & graders can exceed this limit):"
+		  }
+		  else
+		  {
+		    document.getElementById("allowedFileTypes").style.display='';
+			if(fol=='upload_files_only')
+			{
+			  document.getElementById("limitLabel").innerText = "Maximum number of files (instructors & graders can exceed this limit):"
+			}
+			else
+			{
+			  document.getElementById("limitLabel").innerText = "Maximum number of files and/or URLs (instructors & graders can exceed this limit):"
+			}
+		  }
+		}
+		else
+		{
+		  document.getElementById("allowedFileTypes").style.display='none';
+		  document.getElementById("fileLimit").style.display='none';
+		  document.getElementById("fileOrLinkDiv").style.display='none';
+		}
+	  }
+	</script>
+	
+	<div class="form-group">
+	  <%= form.label "Assignment Type" %>
+	  <%= form.select :assignment_type, Assignment.assignment_types.keys.map {|t| [t.humanize, t]}, {}, {class: "form-control", onchange: "showOrHideFiletypes();", id: "assignmentTypeSelect"} %>
+	</div>
+	
+	<div class="form-group" id="fileOrLinkDiv">
+	  <%= form.label "Students will:" %>
+	  <%= form.select :file_or_link, Assignment.file_or_links.keys.map {|t| [t.humanize, t]}, {}, {class: "form-control", onchange: "showOrHideFiletypes();", id: "fileOrLinkSelect"} %>
+	</div>
+	
+	<div class="form-group" id="allowedFileTypes">
+      <%= form.label "Allowed Filetypes (optional; separate multiple types with commas, for example: \"pdf,doc,docx\")" %>
+      <%= form.text_field :permitted_filetypes, class: "form-control" %>
+    </div>
+	
+	<div class="form-group" id="fileLimit">
+      <%= form.label "Maximum Files and Links (instructors & graders can exceed this limit):", id: "limitLabel" %>
+      <%= form.number_field :file_limit, class: "form-control" %>
+    </div>
+	
+	<script>showOrHideFiletypes()</script>
+  <% end %>
+  
+  <% if !@allow_type && assignment.student_file? %>
+    
+	<%# Show/hide fields based on file type (URL or upload) %>
+	<script>
+	  function showOrHideFiletypes()
+	  {
+		document.getElementById("fileLimit").style.display='';
+		fol = document.getElementById('fileOrLinkSelect').value
+		if(fol=='provide_urls_only')
+		{
+		  document.getElementById("allowedFileTypes").style.display='none';
+		  document.getElementById("limitLabel").innerText = "Maximum number of URLs (instructors & graders can exceed this limit):"
+		}
+		else
+		{
+		  document.getElementById("allowedFileTypes").style.display='';
+		  if(fol=='upload_files_only')
+		  {
+			document.getElementById("limitLabel").innerText = "Maximum number of files (instructors & graders can exceed this limit):"
+		  }
+		  else
+		  {
+			document.getElementById("limitLabel").innerText = "Maximum number of files and/or URLs (instructors & graders can exceed this limit):"
+		  }
+		}
+	  }
+	</script>
+	
+    <div class="form-group" id="fileOrLinkDiv">
+	  <%= form.label "Students will:" %>
+	  <%= form.select :file_or_link, Assignment.file_or_links.keys.map {|t| [t.humanize, t]}, {}, {class: "form-control", onchange: "showOrHideFiletypes();", id: "fileOrLinkSelect"} %>
+	</div>
+	
+	<div class="form-group" id="allowedFileTypes">
+      <%= form.label "Allowed Filetypes (optional; separate multiple types with commas, for example: \"pdf,doc,docx\")" %>
+      <%= form.text_field :permitted_filetypes, class: "form-control" %>
+    </div>
+	
+	<div class="form-group" id="fileLimit">
+      <%= form.label "Maximum Files and Links (instructors & graders can exceed this limit):", id: "limitLabel" %>
+      <%= form.number_field :file_limit, class: "form-control" %>
+    </div>
+	
+	<script>showOrHideFiletypes()</script>
+  <% end %>
+  
+  <% if params[:copy] %>
+    <%= hidden_field_tag 'copy', params[:copy] %>
+  <% end %>
+  
+  <div class="actions">
+    <%= form.submit class: "btn btn-primary" %>
+  </div>
+<% end %>

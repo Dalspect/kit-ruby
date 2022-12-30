@@ -1,0 +1,37 @@
+<%= form_with(model: rubric_item, local: true) do |form| %>
+  <% if rubric_item.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(rubric_item.errors.count, "error") %> prohibited this rubric_item from being saved:</h2>
+
+      <ul>
+      <% rubric_item.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :problem_id %>
+    <%= form.text_field :problem_id %>
+  </div>
+
+  <div class="field">
+    <%= form.label :title %>
+    <%= form.text_field :title %>
+  </div>
+
+  <div class="field">
+    <%= form.label :points %>
+    <%= form.text_field :points %>
+  </div>
+
+  <div class="field">
+    <%= form.label :location %>
+    <%= form.number_field :location %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit %>
+  </div>
+<% end %>

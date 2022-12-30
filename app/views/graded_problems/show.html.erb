@@ -1,0 +1,29 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Problem:</strong>
+  <%= @graded_problem.problem %>
+</p>
+
+<p>
+  <strong>Submission:</strong>
+  <%= @graded_problem.submission %>
+</p>
+
+<p>
+  <strong>Comments:</strong>
+  <%= @graded_problem.comments %>
+</p>
+
+<p>
+  <strong>Point adjustment:</strong>
+  <%= @graded_problem.point_adjustment %>
+</p>
+
+<p>
+  <strong>Grader:</strong>
+  <%= @graded_problem.grader %>
+</p>
+
+<%= link_to 'Edit', edit_graded_problem_path(@graded_problem) %> |
+<%= link_to 'Back', graded_problems_path %>

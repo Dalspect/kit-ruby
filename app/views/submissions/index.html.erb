@@ -1,0 +1,452 @@
+
+
+<%= content_for :page_title do %>
+  <%= @assigned.assignment.title %> | Submissions
+<% end %>
+
+
+<ol class="breadcrumb">
+  <%= render 'assigneds/grading_crumbs', assigned: @assigned %>
+  <li class="active">Submissions</li>
+</ol>
+
+<%= render 'assigneds/tabs', current: :submissions, assigned: @assigned %>
+
+<center>
+<br>
+<% if @assigned.hide_grades? %>
+  <div class="alert alert-warning">
+    Grades and feedback currently hidden from students. Grades also do not currently count towards overall grades.
+	<%= link_to "Un-hide Grades", assignment_assigned_toggle_hide_grades_path(@assigned.assignment, @assigned), method: :patch, class: "btn btn-success" %>
+  </div>
+<% else %>
+  <%= link_to "Hide Grades From Students", assignment_assigned_toggle_hide_grades_path(@assigned.assignment, @assigned), method: :patch, class: "btn btn-warning" %>
+<% end %>
+
+<% if @assigned.assignment.student_responsible? %>
+  <br><br>
+  
+  Notify me on new submissions:
+  <%= render 'users/notification_toggle_button', property: current_user.notify_grader_new_submissions.where(assigned: @assigned).any?, link: toggle_submitted_to_grader_notification_path(@assigned, return_url: request.original_url)%>
+
+<% end %>
+
+<br>
+Notify me on regrade requests:
+<%= render 'users/notification_toggle_button', property: current_user.notify_grader_regrade_request.where(assigned: @assigned).any?, link: toggle_regrade_request_notification_path(@assigned, return_url: request.original_url)%>
+
+<br><br>
+<% if @assigned.assignment.student_file? || @assigned.assignment.professor_file? %>
+  <p>
+	<strong>Submitted files also available in this repository: </strong>
+	<kbd><%= get_repo_url @assigned.repo %></kbd>
+	<br><br>
+	
+	<div class="btn btn-group">
+      <% if session[:enable_file_viewer] %>
+        <%= link_to disable_file_viewer_path, method: :post, class: "btn btn-default" do %><span class="glyphicon glyphicon-eye-close"></span>  Disable File Viewer<%end%>
+        <%= link_to file_viewer_settings_path(return_url: request.original_url), class: "btn btn-default" do %><span class="glyphicon glyphicon-cog"></span>  Settings<%end%>
+	  <% else %>
+        <%= link_to enable_file_viewer_path, method: :post, class: "btn btn-default" do %><span class="glyphicon glyphicon-eye-open"></span>  Enable File Viewer<%end%>
+        <%= link_to file_viewer_settings_path(return_url: request.original_url), class: "btn btn-default" do %><span class="glyphicon glyphicon-cog"></span>  Settings<%end%>
+	  <% end %>
+	</div>
+	
+	<%= link_to assignment_bulk_download_path(@assigned.assignment, @assigned), class: "btn btn-default" do %>
+	   <span class="glyphicon glyphicon-download" aria-hidden="true"></span><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>  Download All (zip)
+	<% end %>
+	<span style="color:grey"> | </span>
+	<%=link_to assignment_view_bulk_upload_path(@assigned.assignment, @assigned), class: "btn btn-default" do %>
+	  <span class="glyphicon glyphicon-upload" aria-hidden="true"></span><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>  Bulk Upload
+	<% end %>
+	  
+	<%=link_to assignment_view_bulk_sort_path(@assigned.assignment, @assigned), class: "btn btn-default", disabled: Dir.entries(@assigned.repo.get_repository_read_directory+File::SEPARATOR+"unsorted").size<=3 do %>
+	  <span class="glyphicon glyphicon-transfer" aria-hidden="true"></span>  Sort Bulk Uploads
+	<% end %>
+	</p>
+<% elsif @assigned.assignment.student_repo? %>
+  <button class="btn btn-default" data-toggle="collapse" href="#cloneAll" onclick="this.style.display = 'none';">Clone All</button>
+  
+  <div class="collapse collapse-in" id="cloneAll">
+    <div class="well">
+	  Click the button below to download a shell script (designed for unix-like consoles) to clone all repositories at once.
+	  To use it, place it where you want the repositories to be cloned and run it with <kbd><%= "sh clone-all"+@assigned.id.to_s+".sh" %></kbd>.
+	  If your SSH key is password protected, you may still have to type your password repeatedly.
+	  
+	  <%# Apparently you can't use send_data as a response to a form, or some browsers just ignore the response. Have to do this in a hacky javascript way %>
+	  
+	  <br>
+      <input type="checkbox" id="cloneIncludePrevious" onchange="cloneToggleParams()"><b>  Include Previous Submissions </b>
+	  <br>
+      <input type="checkbox" id="cloneIncludeIncomplete" onchange="cloneToggleParams()"><b>  Include Incomplete Submissions </b>
+	  <br>
+	  
+	  <a id="cloneDownload" class="btn btn-success">Download Script</a>
+	  
+	  <script>
+	    clone_all_target = "<%= assignment_clone_all_path(@assigned.assignment, @assigned) %>?"
+		
+		function cloneToggleParams()
+		{
+		  str = clone_all_target
+		  if(document.getElementById('cloneIncludePrevious').checked)
+		  {
+			str += "&include_prev=1"
+		  }
+		  
+		  if(document.getElementById('cloneIncludeIncomplete').checked)
+		  {
+		    str += "&include_incomplete=1"
+		  }
+		  
+		  document.getElementById('cloneDownload').href = str
+		}
+		
+		cloneToggleParams()
+	  </script>
+
+	</div>
+	
+  </div>
+  <br><br>
+<% end %>
+
+<%# If there is no rubric, don't make it look like things need to be graded %>
+<% has_rubric = @assigned.assignment.problems.any? %>
+
+<table class="table table-bordered">
+<thead>
+  <tr>
+    <th colspan=<%= @assigned.assignment.incomplete_possible? ? 7 : 6 %>>
+	  <center>Show:</center>
+	</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="active"><center>
+	  <input type="checkbox" id="showNoSubmission" onchange="hideRows()" checked>  Not Yet Submitted
+	</center></td>
+	
+	<td class="danger"><center>
+      <input type="checkbox" id="showOverdue" onchange="hideRows()" checked>  Overdue
+	</center></td>
+	
+    <% if @assigned.assignment.incomplete_possible? %>
+      <td class="active"><center>
+	    <input type="checkbox" id="showIncomplete" onchange="hideRows()" checked>  Incomplete
+	  </center></td>
+    <% end %>
+	
+	<% if has_rubric %>
+	  <td class="warning"><center>
+        <input type="checkbox" id="showReady" onchange="hideRows()" checked>  Needs Grading
+	  </center></td>
+	<% else %>
+	  <td><center>
+        <input type="checkbox" id="showReady" onchange="hideRows()" checked> Ungraded
+	  </center></td>
+	<% end %>
+	
+	<td class="success"><center>
+      <input type="checkbox" id="showGraded" onchange="hideRows()" checked>  Graded
+	</center></td>
+	
+	<td class="info"><center>
+      <input type="checkbox" id="showRegrade" onchange="hideRows()" checked>  Regrade Requested
+	</center></td>
+	
+	<td><center>
+	  <input type="checkbox" id="showPrevious" onchange="hideRows()">  Previous Submissions
+	</center></td>
+  </tr>
+</tbody></table>
+
+</center>
+
+
+<table class="table table-hover" data-classes="table-no-bordered" data-toggle="table" data-search="true" maintainMetaData="true" maintainSelected="true" id="subsTable" data-sort-name="user" data-sort-order="asc">
+  <thead>
+    <tr>
+      <th data-sortable="true" data-field="user">User(s)</th>
+      <th data-sort-name="_submitted_data.raw-time" data-sortable="true" data-field="submitted">Submitted</th>
+	  <th>Extension</th>
+	  <th data-sort-name="_grade_data.raw-grade" data-sortable="true" data-field="grade">Problems Graded / Grade</th>
+	  <% if @assigned.assignment.student_repo? %>
+	    <th data-field="repo" data-sortable="true">Repository</th>
+	  <% end %>
+	  <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @submissions.order(id: :asc).each do |submission| %>
+	
+	  <%# Row color and filter status attribute %>
+	  <% if submission.graded? %>
+	    <% if submission.has_active_regrade_request? %>
+		  <tr class="info" data-status="regrade" data-prev=<%= submission.contributors.empty? %>>
+		<% else %>
+          <tr class="success" data-status="graded" data-prev=<%= submission.contributors.empty? %>>
+	    <% end %>
+	  <% elsif submission.turned_in? %>
+	    <% if has_rubric %>
+	      <tr class="warning" data-status="needsGrading" data-prev=<%= submission.contributors.empty? %>>
+		<% else %>
+		  <tr data-status="needsGrading" data-prev=<%= submission.contributors.empty? %>>
+		<% end %>
+	  <% else %>
+	    <tr class="active" data-status="incomplete" data-prev=<%= submission.contributors.empty? %>>
+	  <% end %>
+	    
+		<%# Contributor names %>
+        <td><%= submission.contributors.map{|c| c.user.get_full_preferred_name}.join(", ") %>
+		<% if submission.past_contributors.any? %>
+		  (<s><%= submission.past_contributors.map{|c| c.user.get_full_preferred_name}.join(", ")%></s>)
+		<% end %>
+		</td>
+		
+		<%# Lateness/incomplete/status/etc %>
+		<% if submission.assigned.assignment.grade_only? %>
+		  <td data-raw-time="0">N/A
+		<% elsif submission.blank? %>
+		  <td data-raw-time="0"><p style="color:red">Blank Submission</p>
+		<% elsif submission.professor_uploaded? %>
+		  <td data-raw-time="0">Professor Uploaded
+		<% elsif submission.turned_in? %>
+		  <td data-raw-time=<%=submission.get_time_turned_in.to_i %>><%= render 'lateness_label', submission: submission %>
+		<% else %>
+		  <td data-raw-time="0"><p style="color:orange">Incomplete</p>
+		<% end %>
+		<% if submission.has_active_regrade_request? %>
+		  <p style="color:blue"><b>Regrade Requested</b></p>
+		<% end %>
+		</td>
+		
+		<%# Extensions %>
+		<td>
+		  <% if submission.contributors.count==0 %>
+		  <% elsif submission.contributors.count==1 %>
+		    <% exts = submission.contributors.first.user.extensions.where(assigned: @assigned) %>
+		    <% if exts.any? %>
+			  <%= link_to "Edit", edit_extension_path(exts.first), class: "btn btn-primary" %>
+			<% else %>
+			  <%= link_to "Grant", new_extension_path(user: submission.contributors.first.user, assigned: @assigned), class: "btn btn-default" %>
+			<% end %>
+		  <% else %>
+		    <div class="dropdown">
+			  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Extensions<span class="caret"></span></a>
+			  <ul class="dropdown-menu">
+			    <% submission.contributors.each do |c| %>
+			      <li>
+				    <%= c.user.get_full_preferred_name %>: 
+				    <% exts = c.user.extensions.where(assigned: @assigned) %>
+				    <% if exts.any? %>
+				      <%= link_to "Edit", edit_extension_path(exts.first)%>
+				    <% else %>
+				      <%= link_to "Grant", new_extension_path(user: c.user, assigned: @assigned) %>
+				    <% end %>
+				  </li>
+			    <% end %>
+			  </ul>
+		    </div>
+		  <% end %>
+		</td>
+		
+		<%# Progress bar %>
+		<% if submission.graded? %>
+		  <td data-raw-grade="<%=submission.get_adjusted_grade_points %>" style="width:20%">
+			<%= render "submissions/submission_grade_bar", submission: submission, assigned: @assigned %>
+		  </td>
+		<% elsif submission.turned_in? %>
+		  <td data-raw-grade="<%= -submission.count_graded_problems %>">
+		    <div class="progress" style="position: relative; text-align: center">
+			  <% if has_rubric %>
+			    <div class="progress-bar progress-bar-warning" role="progressbar" aria-hidden="true" style=<%= "width:" + (submission.count_graded_problems.to_f/@assigned.assignment.problems.count * 100).to_s + "%"%>></div>
+		        <span style="position:absolute; left: 0; right: 0"><%= submission.count_graded_problems %>/<%= @assigned.assignment.problems.count %> Graded</span>
+		      <% else %>
+			    <div class="progress-bar" role="progressbar" aria-hidden="true" style="width:100%;background-color:darkgrey"%>No Rubric</div>
+			  <% end %>
+			</div>
+		  </td>
+		<% else %>
+		  <td data-raw-grade="-Infinity"><div class="progress"></div></td>
+		<% end %>
+		
+		<% if @assigned.assignment.student_repo? %>
+		  <td>
+		    <% if submission.repo %>
+			  <kbd><%= get_repo_url submission.repo %></kbd>
+			<% end %>
+		  </td>
+		<% end %>
+        <td><%= link_to 'Grade', submission_grade_path(submission), class: "btn btn-default" %></td>
+      </tr>
+    <% end %>
+	
+	<%# --------- No submission yet ----------------- %>
+	<%# @assigned.klass.students.map{|s| s.user}.each do |u| %>
+	<% @no_submission.each do |u| %>
+	  <%# Status for row color/filtering %>
+	  <%# unless @assigned.get_user_submission(u) %>
+	  
+	    <% od = @assigned.assignment.student_responsible? && @assigned.overdue_for?(u) %>
+	    
+	    <% if od %>
+		  <tr class="danger" data-status="overdue" data-prev="false">
+		<% else %>
+		  <tr class="active" data-status="noSubmission" data-prev="false">
+		<% end %>
+		
+		  <%# Name %>
+		  <td> <%= u.get_full_preferred_name %> </td>
+		  
+		  <%# Status & extensions %>
+		  <% exts = u.extensions.where(assigned: @assigned) %>
+		  <% if exts.any? %>
+			<% if exts.first.overdue? %>
+			  <td data-raw-time="-2"> <span style="color:red"><b>Extension Expired</b></span></td>
+			<% else %>
+			  <td data-raw-time="-1"> <span style="color:green">Granted Extension</span></td>
+			<% end %>
+			<td><%= link_to "Edit", edit_extension_path(exts.first), class: "btn btn-primary" %></td>
+		  <% else %>
+			<td data-raw-time="-1"> <span style="color:red"><b>No Submission</b></span></td>
+			<td><%= link_to "Grant", new_extension_path(user: u, assigned: @assigned), class: "btn btn-default" %></td>
+		  <% end %>
+		  </td>
+		  
+		  <%# Progress bar %>
+		  <td data-raw-grade="-Infinity">
+		    <% if od %>
+		      <div class="progress">
+			    <div class="progress-bar progress-bar-danger" role="progressbar" aria-hidden="true" style="width: 100%">
+				  Overdue
+				</div>
+			  </div>
+			<% else %>
+			  <div class="progress"></div>
+			<% end %>
+		  </td>
+		  
+		  <% if @assigned.assignment.student_repo? %>
+		    <td></td>
+		  <% end %>
+		  <td>
+		    <div class="btn-group">
+			  <% if @assigned.assignment.student_file? || @assigned.assignment.professor_file? %>
+			    <%= link_to "Upload", submission_professor_new_upload_path(assigned: @assigned, user: u), class: "btn btn-default" %>
+			  <% end %>
+		      <%= link_to "Grade Blank", submission_create_blank_path(assigned: @assigned, user: u), method: :post, class: "btn btn-default" %>
+			</div>
+		  </td>
+		</tr>
+	  <%# end %>
+	<% end %>
+  </tbody>
+</table>
+
+
+<script>
+	
+	function hideRows()
+	{
+	  showPrev = document.getElementById("showPrevious").checked==true
+	  
+	  showGraded = document.getElementById("showGraded").checked==true
+	  showRegrade = document.getElementById("showRegrade").checked==true
+	  showReady = document.getElementById("showReady").checked==true
+	  showNoSubmission = document.getElementById("showNoSubmission").checked==true
+	  
+	  showOverdue=null
+	  odbox = document.getElementById("showOverdue")
+	  
+	  if(showNoSubmission)
+	  {
+	    odbox.checked = true
+		odbox.disabled = true
+		showOverdue=true
+	  }
+	  else
+	  {
+	    odbox.disabled = false
+	    showOverdue = odbox.checked==true
+	  }
+	  
+	  
+	  
+	  <% if @assigned.assignment.incomplete_possible? %>
+        showIncomplete = document.getElementById("showIncomplete").checked==true
+      <% end %>
+	  
+	  for(r of document.getElementById('subsTable').rows)
+	  {
+	    if(!showPrev && r.getAttribute("data-prev")=="true")
+		{
+	      r.hidden = "true"
+		}
+		else
+		{
+		  status = r.getAttribute("data-status")
+		  
+		  if(status=="graded")
+		    if(showGraded)
+			  r.hidden=null
+			else
+			  r.hidden="true"
+		   
+		  if(status=="regrade")
+		    if(showRegrade)
+			  r.hidden=null
+			else
+			  r.hidden="true"
+		   
+		   if(status=="needsGrading")
+		    if(showReady)
+			  r.hidden=null
+			else
+			  r.hidden="true"
+			  
+		  if(status=="noSubmission")
+		    if(showNoSubmission)
+			  r.hidden=null
+			else
+			  r.hidden="true"
+			  
+			  
+		  if(status=="overdue")
+		    if(showOverdue)
+			  r.hidden=null
+			else
+			  r.hidden="true"
+			  
+		  <% if @assigned.assignment.incomplete_possible? %>
+		    if(status=="incomplete")
+		      if(showIncomplete)
+			    r.hidden=null
+			  else
+			    r.hidden="true"
+		  <% end %>
+		  
+		}
+	  }
+	}
+</script>
+
+
+<br>
+
+<% if (current_user.get_professor_classes.include?(@assigned.klass) || current_user.admin?) %>
+
+  <%#= render 'repos/repos_files_editor', repo: @assigned.assignment.files_repo, title: "Assignment Files", return_url: submissions_path(assigned: @assigned), edit: true %>
+  
+<% else %>
+
+  <%= render 'repos/directory_browser', repo: @assigned.assignment.files_repo, prepend: ["grader"], title: "Grader Files", return_url: submissions_path(assigned: @assigned) %>
+  
+  <%= render 'repos/directory_browser', repo: @assigned.assignment.files_repo, prepend: ["student"], title: "Student Files", return_url: submissions_path(assigned: @assigned) %>
+
+<% end %>
+
+<%= render "layouts/fix_turbolink_tables", bst_params: "onResetView: function () {hideRows();}" %>
+

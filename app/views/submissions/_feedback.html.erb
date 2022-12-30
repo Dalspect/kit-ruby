@@ -1,0 +1,119 @@
+  <center>
+    <h1><b><u> Feedback </u></b></h1>
+	
+    <table class="table table-bordered">
+	  
+	  <%# <thead>
+	    <tr class="active">
+		  <th>Problem</th>
+		  <th>Score</th>
+		</tr>
+		<tr>
+		  <th colspan=2><center>Score Details</center></th>    
+		</tr>
+	  </thead> %>
+	  
+	  <tbody>
+	   <% unless @submission.hide_rubric? %>
+	    <% @submission.assigned.assignment.problems.order(location: :asc).each do |p| %>
+		  <%# Find graded problem for this problem %>
+		  <% gp = p.graded_problems.find_by(submission: @submission) %>
+		  <%# if gp %>
+		    <tr class="active">
+		      <% if !gp || gp.get_grade_points == 0 && p.points == 0 && p.rubric_items.empty? %>
+			    <td colspan=2><b><center><%=p.title%></center></b></td>
+			  <% else %>
+		        <td><b> <%= p.title %> </b></td>
+			    <td align="right"><b> <%= gp.get_grade_points %>/<%= gp.problem.points %> </b></td>
+			  <% end %>
+		    </tr>
+		    <tr>
+		      <td colspan=2>
+		        <table class="table table-bordered">
+				  <tbody>
+				  
+				    <% p.rubric_items.order(location: :asc).each do |r| %>
+				      <% if gp && gp.checked_rubric_items.exists?(rubric_item: r) %>
+					    <% if r.points>0 %>
+					      <tr class="success">
+					    <% else %>
+					      <tr class="danger">
+					    <% end %>
+					    <td>
+					      <span class="glyphicon glyphicon-check" aria-hidden="true"></span>
+				        </td>
+					  
+					    <td>
+				          <%= r.title %>
+				   	    </td>
+					    <td>
+						  <%= r.points %>
+					    </td>
+					  
+					  <% else %>
+					    <tr>
+					      <td>
+						    <span class="glyphicon glyphicon-unchecked" aria-hidden="true"></span>
+						  </td>
+						  <td>
+				            <span style="color:grey"><%= r.title %></span>
+				   	      </td>
+					      <td>
+						    <span style="color:grey"><%= r.points %></span>
+					      </td>
+					  <% end %>
+				      
+						
+					  </tr>
+					
+				    <% end %>
+				  
+				    <% if gp && gp.point_adjustment %>
+				      <% if gp.point_adjustment > 0 %>
+				        <tr class="success">
+					      <td>
+				            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+					      </td>
+					  <% else %>
+					    <tr class="danger">
+					      <td>
+				            <span class="glyphicon glyphicon-minus" aria-hidden="true"></span>
+					      </td>
+					  <% end %>
+						
+						<td>
+					      Point Adjustment
+					    </td>
+					    <td>
+					      <%= gp.point_adjustment %>
+					    </td>
+					  </tr>
+						
+				    <% end %>
+				  
+				    <% unless !gp || !gp.comments || gp.comments.empty? %>
+				      <tr class="warning">
+				        <td>
+					      <span class="glyphicon glyphicon-comment" aria-hidden="true"></span>
+				        </td>
+					    <td colspan=2>
+							<%= simple_format(gp.comments) %>
+					    </td>
+				      </tr>
+				    <% end %>
+				  </tbody>
+			    </table>
+			  </tr>
+		    </tr>
+		  <%# end %>
+		<% end %>
+	   <% end %>
+		
+		<% unless @submission.overall_comments.blank? %>
+			<tr class="active"><td colspan=2><b><center>Overall Comments <span class="glyphicon glyphicon-comment" aria-hidden="true"></span></center></b></td></tr>
+			<tr class="warning"><td colspan=2> <%= simple_format(@submission.overall_comments) %> </td></tr>
+		<% end %>
+	  </tbody>
+	</table>
+    <%= render 'grade_summary', submission: @submission %>
+  </center>

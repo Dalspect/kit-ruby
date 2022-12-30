@@ -1,0 +1,166 @@
+<%= content_for :page_title do %>
+  Submit <%= @submission.assigned.assignment.title %>  
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= link_to (@submission.assigned.klass.course.course_code+" "+@submission.assigned.klass.course.title+": "+@submission.assigned.klass.semester+" "+@submission.assigned.klass.section.to_s), @submission.assigned.klass %></li>
+  <li><%= @submission.assigned.assignment.title %></li>
+  <li class="active">Submit</li>
+</ol>
+
+<h1><%= @submission.assigned.assignment.title %></h1>
+
+<%= simple_format @submission.assigned.assignment.description %>
+
+<%= render 'repos/directory_browser', repo: @submission.assigned.assignment.files_repo, prepend: ["student"], title: "Provided Files", return_url: new_submission_path(assigned: @assigned), open: true %>
+
+<br>
+
+<% case @submission.assigned.assignment.assignment_type %>
+<% when "student_repo", "student_file" %>
+    <% if @submission.assigned.max_contributors > 1 %>
+	  <% invites = current_user.contributor_invites.select{|s| s.submission.assigned==@assigned} %>
+	  <% if invites.any? %>
+	  
+        <div class="well">  
+          <h3> You have been invited to share a submission with: </h3>
+		  <table class= "table table-hover">
+		    <thead>
+			  <tr>
+			    <th>Users</th>
+			    <th>Accept</th>
+			    <th>Reject</th>
+			  </tr>
+		    </thead>
+
+		    <tbody>
+			  <% current_user.contributor_invites.select{|s| s.submission.assigned==@assigned}.each do |i| %>
+			    <tr>
+				  <td><%= i.submission.contributors.map{|c| c.user.get_full_preferred_name}.join(", ") %></td>
+				  <td><%= link_to "Accept", contributor_invite_accept_path(i), method: :post, class: "btn btn-success" %></td>
+				  <td><%= link_to "Reject", i, method: :delete, data: {confirm: "Are you sure?"}, class: "btn btn-danger" %></td>
+			    </tr>
+			  <% end %>
+		    </tbody>
+		  </table>
+		  
+		  <p>
+		    If you worked with one of these groups and are submitting the same thing as them, 
+			click "accept" above to join their submission. If not, you can reject
+			the invitation or just ignore it.
+		  </p>
+		
+        </div>
+	  <% else %>
+	    <p>
+		  You may work in a group on this assignment. To do so, one person should start/submit the assignment, then invite the others. Invitations to work together will appear here.
+		  <br>Maximum contributors: <%= @assigned.max_contributors %>
+		</p>
+	  <% end %>
+    <% end %>
+<% end %>
+
+<% case @submission.assigned.assignment.assignment_type %>
+<% when "student_file" %>
+  
+    <%= form_with(model: @submission, local: true) do |form| %>
+      <% if @submission.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(@submission.errors.count, "error") %> prohibited this submission:</h2>
+
+          <ul>
+          <% @submission.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+          </ul>
+        </div>
+      <% end %>
+      
+	  <% unless @assigned.assignment.provide_urls_only? %>
+	  <div class="panel panel-default">
+	  <div class="panel-body">
+        <div class="form-group">
+          <h3><%= form.label "Upload Files:" %></h3>
+          <% if @assigned.assignment.permitted_filetypes && !@assigned.assignment.permitted_filetypes.empty? %>
+            Allowed Filetypes: <%=@assigned.assignment.permitted_filetypes%>
+          <% end %>
+		  <br>
+		  
+		  <% if @assigned.assignment.file_limit > 1 %>
+		    To select multiple files, hold <code>Ctrl</code> (Windows), <code>Command</code> (Mac), or another key depending on your system.
+		  <% end %>
+		  <br>
+		  Some browsers also allow you to click and drag files into the box below.
+          <%= form.file_field :files, class: "form-control", autofocus: true, multiple: true, accept: @assigned.assignment.permitted_filetypes.gsub(/[^\w\,]/,'').split(",").map{|t| "."+t}.join(",") %>
+        </div>
+	  </div></div>
+	  <% end %>
+	  
+	  <% if @assigned.assignment.both? %>
+		<h2><center>And/Or</center></h2>
+	  <% end %>
+	  
+	  <% unless @assigned.assignment.upload_files_only? %>
+	  <div class="panel panel-default">
+	  <div class="panel-body">
+        <%= render 'url_adder', form: form, max_urls: @assigned.assignment.file_limit %>
+	  </div></div>
+	  <% end %>
+	  <% case @assigned.assignment.file_or_link %>
+	  <% when "upload_files_only" %>
+	    You may submit up to <%= pluralize(@assigned.assignment.file_limit, "file") %>.
+	  <% when "provide_urls_only" %>
+	    You may submit up to <%= pluralize(@assigned.assignment.file_limit, "URL") %>.
+	  <% when "both" %>
+	    <% if @assigned.assignment.file_limit > 1 %>
+	      You may submit up to <%= @assigned.assignment.file_limit %> files and URLs.
+		<% else %>
+		  You may submit 1 file or URL.
+		<% end %>
+	  <% end %>
+	  
+	  
+	  
+	  <div class="form-group">
+	    <%= form.hidden_field :assigned_id %>
+	  </div>
+	
+	  <div class="actions">
+	    <%= form.submit "Submit", class: "btn btn-success" %>
+	  </div>
+	  
+    <% end %>
+  
+<% when "student_repo" %>
+
+    Start assignment now? This will create a cloned repository to work in.
+
+    <%= form_with(model: @submission, local: true) do |form| %>
+      <% if @submission.errors.any? %>
+        <div class="alert alert-danger">
+          <h2><%= pluralize(@submission.errors.count, "error") %> prohibited this submission:</h2>
+
+          <ul>
+          <% @submission.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+          </ul>
+        </div>
+      <% end %>
+      
+      <div class="form-group">
+        <%= form.hidden_field :assigned_id %>
+      </div>
+        
+      <div class="actions">
+        <%= form.submit "Start", class: "btn btn-success" %>
+      </div>
+    <% end %>
+
+<% when "professor_file" %>
+
+<% when "grade_blank" %>
+
+<% end %>
+

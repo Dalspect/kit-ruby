@@ -1,0 +1,15 @@
+<p>
+  Dear <%= @user.get_preferred_first_name() %>,
+<br>
+  A new assignment has been assigned in <%= @assigned.klass.course.title %>:
+<br><br>
+  <%= @assigned.assignment.title %>
+<br><br>
+  Description or instructions:<br>
+  <%= @assigned.assignment.description %>
+<br><br>
+  Due: <%=@assigned.due_date.strftime("%A, %b %d at %I:%M%p") %>
+<br><br>
+  You can submit the assignment <%= link_to 'here', new_submission_url(assigned: @assigned) %>.
+</p>
+<%= render 'notification_explanation' %>

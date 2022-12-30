@@ -1,0 +1,13 @@
+<%= content_for :page_title do %>
+  <%= @assignment.title %> | Edit
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assignment_crumbs', assignment: @assignment %>
+  <li><%= link_to @assignment.title, @assignment %></li>
+  <li class="active">Edit</li>
+</ol>
+
+<h1>Editing Assignment</h1>
+
+<%= render 'form', assignment: @assignment %>

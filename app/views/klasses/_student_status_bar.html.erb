@@ -1,0 +1,69 @@
+<%# This is for the STUDENT'S VIEW, not the one shown to professors %>
+<%# params: assigneds %>
+
+<% unread_feedback = 0 %>
+<% read_feedback = 0 %>
+<% submitted = 0 %>
+<% not_in = 0 %>
+<% overdue = 0 %>
+
+<% assigneds.each do |ad| %>
+  <% s = ad.get_user_submission(current_user) %>
+  <% if s && (s.turned_in? || (s.graded? && !ad.hide_grades?)) %>
+    <%# Submission exists %>
+	<% if s.graded? && !ad.hide_grades? %>
+	  <% if (s.contributors & current_user.contributors).first.feedback_seen? %>
+	    <% read_feedback += 1 %>
+	  <% else %>
+	    <% unread_feedback += 1 %>
+	  <% end %>
+	<% else %>
+	 <% submitted += 1 %>
+	<% end %>
+  <% else %>
+    <% if ad.assignment.student_responsible? && (ad.student_can_submit?(current_user) || s) %>
+      <%# Not submitted or incomplete %>
+	  <% if ad.overdue_for?(current_user) %>
+	    <% overdue += 1 %>
+	  <% else %>
+	    <% not_in += 1 %>
+	  <% end %>
+	<% end %>
+  <% end %>
+<% end %>
+
+<% max = unread_feedback + read_feedback + submitted + not_in + overdue %>
+
+<div class="progress">
+
+ <% if unread_feedback > 0 %> 
+  <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow=<%= unread_feedback %> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (unread_feedback.to_f/max*100).to_s + "%"%>>
+    <%= unread_feedback %> Unread Feedback
+  </div>
+ <% end %>
+
+ <% if read_feedback > 0 %> 
+  <div class="progress-bar progress-bar-primary" role="progressbar" aria-valuenow=<%=read_feedback%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (read_feedback.to_f/max*100).to_s + "%"%>>
+    <%= read_feedback %> Graded
+  </div>
+ <% end %>
+
+ <% if submitted > 0 %> 
+  <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow=<%=submitted%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (submitted.to_f/max*100).to_s + "%"%>>
+    <%= submitted %> Submitted
+  </div>
+ <% end %>
+ 
+ <% if not_in > 0 %> 
+  <div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow=<%=not_in%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (not_in.to_f/max*100).to_s + "%"%>>
+    <%= not_in %> Not Submitted
+  </div>
+ <% end %>
+ 
+  <% if overdue > 0 %> 
+  <div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow=<%=overdue%> aria-valuemin="0" aria-valuemax=<%=max%> style=<%= "width:" + (overdue.to_f/max*100).to_s + "%"%>>
+    <%= overdue %> Overdue
+  </div>
+ <% end %>
+ 
+</div>

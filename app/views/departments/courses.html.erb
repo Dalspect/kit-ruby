@@ -1,0 +1,58 @@
+
+
+<%= content_for :page_title do %>
+  <%= @department.title %> | Courses
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'department_crumbs', department: @department %>
+  <li class="active">Courses</li>
+</ol>
+
+<%= render 'tabs', current: :courses %>
+
+<center>
+  <input type="checkbox" id="showInactive" onchange="hideRows()">  Show Inactive Courses
+</center>
+
+<table id="courses" class="table table-hover" data-toggle="table" data-classes="table-no-bordered" data-search="true" data-sort-name="Course_Code" data-sort-order="asc">
+  <thead>
+    <tr>
+	  <th data-sortable="true" data-field="Title">Title</th>
+      <th data-sortable="true" data-field="Course_Code">Course code</th>
+	</tr>
+  </thead>
+  <tbody>
+    <% @courses.each do |course| %>
+	  <tr data-active=<%= course.active? %> class=<%= course.active? ? "" : "active" %>>
+	    <td><%= link_to course.title, course%></td>
+        <td><%= course.course_code %></td>
+	  </tr>
+	<% end %>
+  </tbody>
+</table>
+<br>
+<%= link_to 'New Course', new_course_path(department: @department), class: "btn btn-success" %>
+
+
+<script>
+	
+	function hideRows()
+	{
+	  showInactive = document.getElementById("showInactive").checked==true
+	  
+	  for(r of document.getElementById('courses').rows)
+	  {
+	    if(!showInactive && r.getAttribute("data-active")=="false")
+		{
+	      r.hidden = "true"
+		}
+		else
+		{
+		  r.hidden=null
+		}
+	  }
+	}
+</script>
+
+<%= render "layouts/fix_turbolink_tables", bst_params: "onResetView: hideRows" %>

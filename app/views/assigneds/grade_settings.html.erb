@@ -1,0 +1,96 @@
+<%= content_for :page_title do %>
+  <%= @assigned.assignment.title %> | Grading Settings
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assigneds/grading_crumbs', assigned: @assigned %>
+  <li class="active">Grading Settings</li>
+</ol>
+
+<%= render 'assigneds/tabs', current: :grading_settings, assigned: @assigned %>
+
+<h3>Grading Settings for <%= Assignment.find(params[:assignment_id]).title %></h3>
+
+<div class="panel-group">
+  <div class="panel panel-default">
+	<div class="panel-heading">
+	  <h4 class="panel-title">
+		<a data-toggle="collapse" href="#graders"><strong>Assign Graders<span class="caret"></span></strong></a>
+	  </h4>
+	</div>
+	<div id="graders" class="panel-collapse collapse in">
+	  <div class="panel-body">
+	    Note that administrators and class professors already have permission to grade any assignment.
+		<table class="table table-hover">
+		  <thead>
+		    <tr>
+			  <th>User</th>
+			  <th>Assign/Unassign</th>
+			</tr>
+		  </thead>
+		  <tbody>
+		    <% @assigned.klass.graders.map{|g| g.user}.each do |u| %>
+			  <tr>
+			    <td><%= u.get_full_preferred_name %></td>
+			    <% if @assigned.assigned_graders.map{|ag| ag.user}.include?(u) %>
+				  <%# Already assigned %>
+				  <td><%= link_to "Unassign Grader", remove_grader_path(@assigned.assigned_graders.find_by(user: u)), method: :delete, class: "btn btn-danger" %></td>
+				<% else %>
+				  <%# Not assigned %>
+				  <td><%= link_to "Assign Grader", add_grader_path(user: u.id, assigned: @assigned.id), method: :post, class: "btn btn-success" %></td>
+				<% end %>
+			  </tr>
+			<% end %>
+		  </tbody>
+		</table>
+	  </div>
+	</div>
+  </div>
+
+  <div class="panel panel-default">
+	<div class="panel-heading">
+	  <h4 class="panel-title">
+		<a data-toggle="collapse" href="#adjustments"><strong>Grade Adjustments<span class="caret"></span></strong></a>
+	  </h4>
+	</div>
+	<div id="adjustments" class="panel-collapse collapse in">
+	  <div class="panel-body">
+		<%= form_with(model: @assigned, url: assignment_adjustments_path(@assigned.assignment, @assigned)) do |form| %>
+		  <div class="form-group">
+			<abbr title="Change how many points this assignment is out of. Doesn't change how many points students receive; Points gained beyond this maximum are considered extra credit." ><%= form.label "Override Maximum Score:" %></abbr>
+			<%= form.number_field :max_points_override, class: "form-control", step: 0.01 %>
+		  </div>
+		  
+		  <div class="form-group">
+			<abbr title="After all other grade calculations and adjustments occur, scale both the maximum number of points and the scores students receive so the assignment is out of this many points. Grades will have the same percent score after this adjustment. Affects assignment weight compared to others in the same grade category." ><%= form.label "Scale assignment point value (after all other adjustments):" %></abbr>
+			<%= form.number_field :point_value_scale, class: "form-control", step: 0.01 %>
+		  </div>
+
+		  <div class="actions">
+			<%= form.submit "Update Adjustments", class: "btn btn-success" %>
+		  </div>
+		<% end %>
+	  </div>
+	</div>
+  </div>
+
+
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h4 class="panel-title"><strong>
+      Graded Notifications
+	</strong></h4>
+  </div>
+  <div class="panel-body">
+    <p>
+      Students will only be notified that their work has been graded once, 
+	  when their submission first becomes graded or when you unhide grades from students.
+	  You can use this button to reset this so they get notified again.
+	  Students whose submissions are already graded will be re-notified immediately if grades are not hidden from students.
+    </p>
+    <%= link_to 'Reset Graded Notifications', assignment_assigned_reset_notifications_path(@assigned.assignment, @assigned), class: "btn btn-default", method: :post %>
+  </div>
+</div>
+
+</div>
+

@@ -1,0 +1,27 @@
+Dear <%= @user.get_preferred_first_name() %>,
+
+You have been given an extension for <%= @assigned.assignment.title %> in <%= @assigned.klass.course.title %>.
+
+New deadline: <%=@extension.new_deadline.strftime("%A, %b %d at %I:%M%p") %>
+
+<% if @extension.allow_late_submissions %>
+Submitting after deadline allowed
+<% end %>
+
+<% case @extension.allow_resubmissions %>
+<% when "never_resubmit" %>
+Resubmissions not allowed
+<% when "resubmit_before_deadline" %>
+Resubmission allowed before deadline
+<% when "resubmit_before_graded" %>
+Resubmission allowed until assignment is graded
+<% when "resubmit_even_after_graded" %>
+Resubmission allowed
+<% end %>
+<% if @extension.limit_resubmissions %>
+Limited to <%= @extension.resubmission_limit %> resubmissions
+<% end %>
+
+You can submit or resubmit the assignment at <%= new_submission_url(assigned: @assigned) %>
+
+<%= render 'notification_explanation' %>

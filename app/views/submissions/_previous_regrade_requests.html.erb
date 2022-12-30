@@ -1,0 +1,54 @@
+<% reqs = @submission.regrade_requests.where(closed: true).order(created_at: :desc) %>
+
+<% if reqs.length > 0 %>
+  <% fr = reqs.first %>
+  
+  <div class="panel panel-info">
+	<div class="panel-heading">
+	  Regrade request by <%= fr.requested_by.get_preferred_first_name %> on <%= fr.created_at.strftime("%A, %b %d at %I:%M %p") %>:
+	</div>
+	<div class="panel-body">
+	  <%= fr.reason %>
+	</div>
+	<div class="panel-heading">
+	  Response from <%= fr.closed_by.get_preferred_first_name %> on <%= fr.updated_at.strftime("%A, %b %d at %I:%M %p") %>:
+	</div>
+	<div class="panel-body">
+	  <%= fr.response %>
+	</div>
+  </div>
+	  
+
+  
+  <% if reqs.length > 1 %>
+    <div class="panel-group">
+	  <div class="panel panel-info">
+		<div class="panel-heading">
+		  <h4 class="panel-title">
+			<a data-toggle="collapse" href="#older_requests"><strong>Previous Regrade Requests<span class="caret"></span></strong></a>
+		  </h4>
+		</div>
+		<div id="older_requests" class="panel-collapse collapse">
+		  <div class="panel-body">
+		    <% (reqs-[fr]).each do |r| %>
+		      <div class="panel panel-info">
+				<div class="panel-heading">
+				  Regrade request by <%= r.requested_by.get_preferred_first_name %>  on <%= r.created_at.strftime("%A, %b %d at %I:%M %p") %>:
+				</div>
+				<div class="panel-body">
+				  <%= r.reason %>
+				</div>
+				<div class="panel-heading">
+				  Response from <%= r.closed_by.get_preferred_first_name %> on <%= fr.updated_at.strftime("%A, %b %d at %I:%M %p") %>:
+				</div>
+				<div class="panel-body">
+				  <%= r.response %>
+				</div>
+			  </div>
+		    <% end %>
+		  </div>
+		</div>
+	  </div>
+	</div>
+  <% end %>
+<% end %>

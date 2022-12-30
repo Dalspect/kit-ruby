@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  submission: one
+  reason: MyText
+  closed: false
+  response: MyText
+
+two:
+  submission: two
+  reason: MyText
+  closed: false
+  response: MyText

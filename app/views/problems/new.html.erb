@@ -1,0 +1,14 @@
+<%= content_for :page_title do %>
+  <%= @assignment.title %> | New problem
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assignments/assignment_crumbs', assignment: @assignment %>
+  <li><%= link_to @assignment.title, @assignment %></li>
+  <li><%= link_to "Rubric", assignment_problems_path(@assignment)%></li>
+  <li class="active">New Problem</li>
+</ol>
+
+<h1>New Problem</h1>
+
+<%= render 'form', problem: @problem %>

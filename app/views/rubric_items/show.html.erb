@@ -1,0 +1,24 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Problem:</strong>
+  <%= @rubric_item.problem %>
+</p>
+
+<p>
+  <strong>Title:</strong>
+  <%= @rubric_item.title %>
+</p>
+
+<p>
+  <strong>Points:</strong>
+  <%= @rubric_item.points %>
+</p>
+
+<p>
+  <strong>Location:</strong>
+  <%= @rubric_item.location %>
+</p>
+
+<%= link_to 'Edit', edit_rubric_item_path(@rubric_item) %> |
+<%= link_to 'Back', rubric_items_path %>

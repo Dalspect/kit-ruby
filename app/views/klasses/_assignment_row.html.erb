@@ -1,0 +1,36 @@
+<tr>
+  <% asd = @assigneds.where(assignment_id: a.id).first %>
+  <td><%= link_to a.title, a%></td>
+  <td><%= a.grade_category ? a.grade_category.title : "None" %></td>
+  <td>
+    <% if asd %>
+      <%= asd.get_adjusted_max_grade %>
+	<% else %>
+	  <%= a.get_point_value %>
+	<% end %>
+  </td>
+  <td><%= a.assignment_type.humanize %></td>
+  <% if asd %>
+	<td><%= asd.due_date.strftime("%A, %b %d at %I:%M%p") %></td>
+	<td>
+	  <%= asd.assigned_graders.map{|ag| ag.user}.map{|u| u.get_full_preferred_name}.join(", ") %>
+	</td>
+	<td width="30%"><%= render 'klasses/assignment_status', assigned: asd, assignment: a%></td>
+	<td>
+		<% if a.student_file? || a.student_repo? %>
+		  <%= link_to 'Submissions & Grading', submissions_path(assigned: asd.id), class: "btn btn-primary" %>
+		<% elsif a.professor_file? %>
+		  <%= link_to 'Upload & Grade', submissions_path(assigned: asd.id), class: "btn btn-primary" %>
+		<% else %>
+		  <%= link_to 'Grade', submissions_path(assigned: asd.id), class: "btn btn-primary" %>
+		<% end %>
+	</td>
+  <% else %>
+	<td>-</td>
+	<td>-</td>
+	<td>
+	  -
+	</td>
+	<td><%= link_to 'Assign', assignment_assign_path(a, class: @klass.id), class: "btn btn-default" %></td>
+  <% end %>
+</tr>

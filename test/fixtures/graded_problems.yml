@@ -1,0 +1,15 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  problem: one
+  submission: one
+  comments: MyText
+  point_adjustment: 9.99
+  grader: one
+
+two:
+  problem: two
+  submission: two
+  comments: MyText
+  point_adjustment: 9.99
+  grader: two

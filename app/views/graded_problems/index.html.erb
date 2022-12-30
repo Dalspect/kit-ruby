@@ -1,0 +1,35 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Graded Problems</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Problem</th>
+      <th>Submission</th>
+      <th>Comments</th>
+      <th>Point adjustment</th>
+      <th>Grader</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @graded_problems.each do |graded_problem| %>
+      <tr>
+        <td><%= graded_problem.problem %></td>
+        <td><%= graded_problem.submission %></td>
+        <td><%= graded_problem.comments %></td>
+        <td><%= graded_problem.point_adjustment %></td>
+        <td><%= graded_problem.grader %></td>
+        <td><%= link_to 'Show', graded_problem %></td>
+        <td><%= link_to 'Edit', edit_graded_problem_path(graded_problem) %></td>
+        <td><%= link_to 'Destroy', graded_problem, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Graded Problem', new_graded_problem_path %>

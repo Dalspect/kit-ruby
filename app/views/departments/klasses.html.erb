@@ -1,0 +1,38 @@
+
+<%= content_for :page_title do %>
+  <%= @department.title %> | Classes
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'department_crumbs', department: @department %>
+  <li class="active">Classes</li>
+</ol>
+
+<%= render 'tabs', current: :klasses %>
+
+
+<table class="table table-hover" data-toggle="table" data-classes="table-no-bordered" data-search="true" data-sort-name="Course_Code" data-sort-order="asc">
+  <thead>
+    <tr>
+	  <th data-sortable="true" data-field="Title">Course Title</th>
+      <th data-sortable="true" data-field="Course_Code">Course code</th>
+      <th data-sortable="true" data-field="Semester">Semester</th>
+      <th data-sortable="true" data-field="Section">Section</th>
+	  <th>View</th>
+	</tr>
+  </thead>
+  <tbody>
+    <% @klasses.each do |klass| %>
+	  <tr>
+	    <td><%= klass.course.title %></td>
+        <td><%= klass.course.course_code %></td>
+        <td><%= klass.semester %></td>
+        <td><%= klass.section %></td>
+        <td><%= link_to "View", klass_assignments_path(klass), class: "btn btn-default" %></td>
+	  </tr>
+	<% end %>
+  </tbody>
+</table>
+
+
+<%= render "layouts/fix_turbolink_tables" %>

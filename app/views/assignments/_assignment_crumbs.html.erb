@@ -1,0 +1,7 @@
+<% if assignment.klass %>
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= link_to (assignment.klass.course.course_code+" "+assignment.klass.course.title+": "+assignment.klass.semester+" "+assignment.klass.section.to_s), klass_assignments_path(assignment.klass) %></li>
+<% else %>
+  <%= render 'courses/course_crumbs', course: assignment.course %>
+  <li><%= link_to 'Assignments', @assignment.course %></li>
+<% end %>

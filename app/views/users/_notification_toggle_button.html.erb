@@ -1,0 +1,9 @@
+<% if property==true %>
+  <%= link_to link, method: :post, class: "btn btn-success" do %>
+    ON <span class="glyphicon glyphicon-volume-up"></span>
+  <% end %>
+<% else %>
+  <%= link_to link, method: :post, class: "btn btn-danger" do %>
+    OFF <span class="glyphicon glyphicon-volume-off"></span>
+  <% end %>
+<% end %>

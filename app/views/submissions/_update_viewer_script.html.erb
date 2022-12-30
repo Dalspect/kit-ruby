@@ -1,0 +1,31 @@
+<%# THIS FILE IS DEPRICATED AND NOT CURRENTLY USED %>
+
+<%# Script to redirect the file viewer tab if it is open %>
+<script>
+  function redirectOldFileViewer()
+  {
+    var channel = new BroadcastChannel('kit-file-viewer')
+	channel.postMessage(<%= @submission.id %>)
+	channel.close()
+  }
+  
+  redirectOldFileViewer()
+</script>
+
+
+
+
+<script>
+  
+  function redirectFileViewer()
+  {
+    w = window.open('','kit-file')
+	  <% if @submission.get_file %>
+	  newloc = '<%= submission_download_inline_url(@submission) + "." + @submission.get_file.split(".")[-1] %>'
+	  if w.location != newloc
+	    w.location = newloc
+  }
+  
+  redirectFileViewer()
+  
+</script>

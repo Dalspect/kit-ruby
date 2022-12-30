@@ -1,0 +1,17 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  allow_late_submission: false
+  new_deadline: 2019-01-02 13:21:25
+  use_deadline_as_due_date: false
+  limit_resubmissions: false
+  resubmission_limit: 1
+  allow_resubmissions: 1
+
+two:
+  allow_late_submission: false
+  new_deadline: 2019-01-02 13:21:25
+  use_deadline_as_due_date: false
+  limit_resubmissions: false
+  resubmission_limit: 1
+  allow_resubmissions: 1

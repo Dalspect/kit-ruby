@@ -1,0 +1,32 @@
+<%= form_with(model: assigned, url: assign, local: true) do |form| %>
+  <% if assigned.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(assigned.errors.count, "error") %> prohibited this assigned from being saved:</h2>
+
+      <ul>
+      <% assigned.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :assignment_id %>
+    <%= form.text_field :assignment_id %>
+  </div>
+
+  <div class="field">
+    <%= form.label :klass_id %>
+    <%= form.text_field :klass_id %>
+  </div>
+
+  <div class="field">
+    <%= form.label :due_date %>
+    <%= form.datetime_select :due_date %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit %>
+  </div>
+<% end %>

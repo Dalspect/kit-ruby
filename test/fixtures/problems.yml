@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  assignment: one
+  title: MyString
+  points: 9.99
+  location: 1
+
+two:
+  assignment: two
+  title: MyString
+  points: 9.99
+  location: 1

@@ -1,0 +1,6 @@
+<% if current_user.admin? %>
+  <li><%= link_to 'Departments', departments_path %></li>
+<% else %>
+  <li>Departments</li>
+<% end %>
+<li><%= department.title %></li>

@@ -1,0 +1,60 @@
+<%= content_for :page_title do %>
+  <%=(@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s)%> | Graders
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= (@klass.course.course_code+" "+@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s)%></li>
+  <li class="active">Graders</li>
+</ol>
+
+<%= render 'klasses/tabs', current: :graders, klass: @klass %>
+
+<p>
+  <table class="table table-hover">
+	<thead>
+	  <tr>
+		<th>Name</th>
+		<th>Email</th>
+		<th>Assigned Assignments</th>
+		<th>Submissions To Grade</th>
+		<th></th>
+	  </tr>
+	</thead>
+	<tbody>
+	  <% @klass.graders.each do |s| %>
+		<tr>
+		  <td><%= s.user.get_full_preferred_name %></td>
+		  <td><%= mail_to s.user.email %></td>
+		  <% asds = s.user.assigned_graders.map{|ag| ag.assigned} & @klass.assigned %>
+		  
+		    <%#= asds.select{|ad| ad.submissions.map{|s| s.contributors.any? && s.turned_in? && (!s.graded? || s.has_active_regrade_request?)}.include?(true)}.count %>
+		  
+		  <td>
+			<%= asds.count %>
+		  </td>
+		  <td>
+		    <%= asds.map{|ad| ad.submissions.select{|s| s.contributors.any? && s.turned_in? && (!s.graded? || s.has_active_regrade_request?)}.count}.sum %>
+		  </td>
+		  
+		  <td><%= link_to 'Remove', s, method: :delete, data: { confirm: 'Are you sure?' }, class: "btn btn-danger" %></td>
+		</tr>
+	  <% end %>
+	</tbody>
+  </table>
+</p>
+
+<%= form_with url: graders_path, method: :create, class: "form-inline" do |form| %>
+  <div class="form-group">
+	<%= form.label "Emails (separate multiple with commas):" %>
+	<%= form.text_field :emails, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+	<%= form.hidden_field :klass_id, value: @klass.id %>
+  </div>
+
+  <div class="form-group">
+	<%= form.submit "Add Grader", class: "btn btn-success" %>
+  </div>
+<% end %>

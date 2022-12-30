@@ -1,0 +1,12 @@
+<%= content_for :page_title do %>
+  <%= @course.title %> | Grade Categories
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'course_crumbs', course: @course %>
+  <li class="active">Grade Categories</li>
+</ol>
+
+<%= render 'tabs', current: :grade_categories %>
+
+<%= render "grade_categories/grade_category_list", parent: @course %>

@@ -1,0 +1,15 @@
+Dear <%= @user.get_preferred_first_name() %>,
+  
+Your regrade request for <%= @regrade_request.submission.assigned.assignment.title %> has received the following response:
+  
+----
+
+<%= @regrade_request.response %>
+  
+----
+  
+Your regrade request is now closed. If you still have questions or concerns, it may be best to speak directly with your instructor. You can also submit another regrade request if needed.
+
+You can view your submission and any new feedback here: <%= submission_url(id: @regrade_request.submission_id) %>
+
+<%= render 'notification_explanation' %>

@@ -1,0 +1,54 @@
+<%= content_for :page_title do %>
+  <%= @assigned.assignment.title %> | Submission Settings
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assigneds/grading_crumbs', assigned: @assigned %>
+  <li class="active">Submission Settings</li>
+</ol>
+
+<%= render 'assigneds/tabs', current: :submission_settings, assigned: @assigned %>
+
+
+<h3>Submission Settings for <%= Assignment.find(params[:assignment_id]).title %></h3>
+  
+<%= form_with(model: @assigned, url: assignment_assigned_url(:assignment_id,@assigned.id), local: true) do |form| %>
+  <% if @assigned.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(assigned.errors.count, "error") %> prohibited these settings from being saved:</h2>
+      <ul>
+      <% assigned.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :due_date %>
+    <%= form.datetime_select :due_date, class: "form-control" %>
+  </div>
+
+  <% if @assigned.assignment.student_responsible? %>
+    <div class="form-group">
+      <%= form.label "Maximum contributors to one submission:" %>
+	  <%= form.number_field :max_contributors, step: 1, class: "form-control" %>
+    </div>
+  
+    <div class="form-group">
+	  <%= form.check_box :allow_late_submissions%>
+	  <%= form.label :allow_late_submissions %>
+    </div>
+  
+    <%= render 'resubmission_fields', form: form, assigned: @assigned %>
+  <% end %>
+  
+  <div class="actions">
+    <%= form.submit "Update", class: "btn btn-success" %>
+  </div>
+<% end %>
+<br><br>
+
+<p>
+<%= link_to 'Unassign', assignment_unassign_path(params[:assignment_id], @assigned), data: { confirm: 'Are you sure you want to unassign this assignment? ALL EXISTING SUBMISSIONS AND GRADES WILL BE DELETED!' }, class: "btn btn-danger" %>
+</p>

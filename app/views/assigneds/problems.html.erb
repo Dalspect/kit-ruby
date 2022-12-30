@@ -1,0 +1,29 @@
+<%= content_for :page_title do %>
+  <%= @assigned.assignment.title %> | Problems
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assigneds/grading_crumbs', assigned: @assigned %>
+  <li class="active">Problems</li>
+</ol>
+
+<%= render 'assigneds/tabs', current: :problems, assigned: @assigned %>
+
+<table class="table table-hover">
+  <thead>
+    <tr>
+	  <th>Problem</th>
+	  <th>Points</th>
+	  <th>Grade</th>
+	</tr>
+  </thead>
+  <tbody>
+    <% @problems.order(:location).each do |p| %>
+	  <tr>
+		<td><%= p.title %></td>
+		<td><%= p.points %></td>
+		<td><%= link_to "Grade", assignment_show_grade_problem_path(@assigned.assignment, @assigned, problem_id: p.id), class: "btn btn-primary" %></td>
+	  </tr>
+	<% end %>
+  </tbody>
+</table>

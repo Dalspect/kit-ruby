@@ -1,0 +1,3 @@
+<%= render 'departments/department_crumbs', department: course.department %>
+<li><%= link_to "Courses", department_courses_path(course.department) %></li>
+<li><%= course.course_code+" "+course.title %></li>

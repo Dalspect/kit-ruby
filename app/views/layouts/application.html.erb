@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Kit<%= Rails.env.development? ? "DEV" : "" %> | <%= yield :page_title %></title>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+    <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+	
+	<%= favicon_link_tag asset_path('kitfish.png') %>
+	
+	<% if content_for? :for_head %>
+      <%= yield :for_head %>
+    <% end %>
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	
+  </head>
+
+	<body>
+	<nav class="navbar navbar-default" style=<%= Rails.env.development? ? "background-color:yellow" : "" %> >
+	  <div class="container-fluid">
+		<!-- Brand and toggle get grouped for better mobile display -->
+		<div class="navbar-header">
+		  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse" aria-expanded="false">
+			<span class="sr-only">Toggle navigation</span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		  </button>
+		  <a class="navbar-brand" href=<%=root_url%>>Kit<%= Rails.env.development? ? " DEV" : "" %></a>
+		</div>
+
+		<!-- Collect the nav links, forms, and other content for toggling -->
+		<% if current_user %>
+			<div class="collapse navbar-collapse" id="top-navbar">
+			  <ul class="nav navbar-nav">
+				<% if current_user.admin? || current_user.department_professors.any? %>
+					
+					<li class="dropdown">
+					  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">My Departments <span class="caret"></span></a>
+					  <ul class="dropdown-menu">
+					    <% current_user.department_professors.each do |dp| %>
+						  <li><a href=<%= department_courses_path(dp.department) %>><%= dp.department.title %></a></li>
+						<% end %>
+						
+						<% if current_user.admin? %>
+						  <li role="separator" class="divider"></li>
+						  <li><a href=<%= departments_path %>>All Departments</a></li>
+						<% end %>
+						
+					  </ul>
+					</li>
+				<% end %>
+				<li><a href=<%= klasses_path %>>My Classes</a></li>
+				<% if current_user.admin? %>
+					<li><a href=<%= users_path %>>Users<span class="sr-only">(current)</span></a></li>
+				<% end %>
+			  </ul>
+			  <ul class="nav navbar-nav navbar-right">
+				<li class="dropdown">
+				  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><%= current_user.get_preferred_first_name %> <span class="caret"></span></a>
+				  <ul class="dropdown-menu">
+					<li><%= link_to user_edit_self_path do %>
+					  <span class="glyphicon glyphicon-cog" aria-hidden="true"></span>
+					  Account Settings
+					<% end %></li>
+					<li><%= link_to notification_settings_path do %>
+					  <span class="glyphicon glyphicon-bell" aria-hidden="true"></span>
+					  Notification Settings
+					<% end %></li>
+					<li><%= link_to ssh_keys_path do %>
+					  <span class="glyphicon glyphicon-lock" aria-hidden="true"></span>
+					  SSH Keys
+					<% end %></li>
+					<li role="separator" class="divider"></li>
+					<li><%= link_to logout_path do %>
+					  <span class="glyphicon glyphicon-log-out" aria-hidden="true"></span>
+					  Log Out
+					<% end %></li>
+				  </ul>
+				</li>
+			  </ul>
+			</div><!-- /.navbar-collapse -->
+		<% else %>
+		  <div class="collapse navbar-collapse" id="top-navbar-nouser">
+		    <ul class="nav navbar-nav navbar-right">
+			  <li><%= link_to login_path do %>
+			    <span class="glyphicon glyphicon-log-in" aria-hidden="true"></span>
+			    Log In
+			  <% end %></li>
+			</ul>
+		  </div>
+		<% end %>
+	  </div><!-- /.container-fluid -->
+	</nav>
+
+    <div class="container">
+	  
+	  <% if notice %>
+	    <div class="alert alert-success"> <%= notice %></div>
+      <% end %>
+	  <% if alert %>
+	    <div class="alert alert-danger"> <%= alert %></div>
+      <% end %>
+	  
+      <%= yield %>
+    </div>
+  </body>
+</html>

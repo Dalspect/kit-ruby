@@ -1,0 +1,28 @@
+<%# Params: submission, assigned %>
+<%# Shows a colored progress bar of the grade received %>
+
+<% if submission.graded? %>
+	<div class="progress" style="position: relative; text-align: center">
+	  <% g = submission.get_grade_percent().round(2) %>
+	  <% if g>0 %>
+	    <div class="progress-bar" role="progressbar" aria-hidden="true" style=<%= "width:" + g.to_s + "%;background-color:"+get_color_for_grade(g/100.0)%>></div>
+	    <span style="position:absolute; left: 0; right: 0">
+		  <%= submission.get_adjusted_grade_points %>/<%= assigned.get_adjusted_max_grade %> (<%= g %>%)
+	    </span>
+	    </div>
+	  <% else %>
+	    <div class="progress-bar progress-bar-danger progress-bar-striped" role="progressbar" aria-hidden="true" style="width: 100%"></div>
+	      <span style="position:absolute; left: 0; right: 0">
+		    0/<%= assigned.get_adjusted_max_grade %> (0%)
+	      </span>
+	    </div>
+	  <% end %>
+<% else %>
+	<div class="progress" style="position: relative; text-align: center">
+	  <span style="position:absolute; left: 0; right: 0">
+	    <% if assigned.assignment.problems.length!=0 %>
+		  Not Graded
+		<% end %>
+	  </span>
+	</div>
+<% end %>

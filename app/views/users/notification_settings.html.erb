@@ -1,0 +1,237 @@
+<%= content_for :page_title do %>
+  Notification Settings
+<% end %>
+
+<h1> Notification Settings </h1>
+
+Notifications will be sent to your email address when the following occur. 
+Note that notifications are set on a per-class basis and will default to off for newly added classes.
+
+<% unless current_user.students.empty? %>
+  <center><h2> Student Notifications </h2></center>
+
+  <table class="table table-hover">
+    <table class= "table table-hover">
+		<thead>
+		  <tr>
+		    <td></td>
+			<th colspan=5><center>Notify me when:</center></th>
+		  </tr>
+		  <tr>
+			<th>Class</th>
+			<th>An assignment is assigned</th>
+			<th>An assignment gets feedback</th>
+			<th>Someone invites me to collaborate</th>
+			<th>I get an extension</th>
+			<th>I get a response to a regrade request</th>
+		  </tr>
+		</thead>
+
+		<tbody>
+		  <% current_user.get_student_classes.select{|k| k.end_date >= Date.current}.each do |c| %>
+			<tr>
+			  <td><%= c.course.course_code %> <%= c.course.title %> <%= c.semester %> section <%= c.section %></td>
+			  <% s = c.students.find_by(user: current_user) %>
+			  <td><%= render 'notification_toggle_button', property: s.notify_assignment_assigned, link: toggle_assigned_notification_path(s) %></td>
+			  <td><%= render 'notification_toggle_button', property: s.notify_graded, link: toggle_graded_notification_path(s) %></td>
+			  <td><%= render 'notification_toggle_button', property: s.notify_contributor_invite, link: toggle_contributor_notification_path(s) %></td>
+			  <td><%= render 'notification_toggle_button', property: s.notify_extension, link: toggle_extension_notification_path(s) %></td>
+			  <td><%= render 'notification_toggle_button', property: s.notify_regrade_response, link: toggle_regrade_response_notification_path(s) %></td>
+			</tr>
+		  <% end %>
+		</tbody>
+	  </table>
+	  
+	  <div class="panel-body">
+		<div class="panel panel-default">
+		  <div class="panel-heading">
+			<h4 class="panel-title">
+			  <a data-toggle="collapse" href='#student_notifications_prev'><strong>Past Classes<span class="caret"></span></strong></a>
+			</h4>
+		  </div>
+		  <div id="student_notifications_prev" class="panel-collapse collapse">
+			
+				
+			<table class= "table table-hover">
+			  <thead>
+				<tr>
+				  <td></td>
+				  <th colspan=5><center>Notify me when:</center></th>
+				</tr>
+				<tr>
+				  <th>Class</th>
+				  <th>An assignment is assigned</th>
+				  <th>An assignment gets feedback</th>
+				  <th>Someone invites me to collaborate</th>
+				  <th>I get an extension</th>
+				  <th>I get a response to a regrade request</th>
+			    </tr>
+			  </thead>
+
+			  <tbody>
+				<% current_user.get_student_classes.select{|k| k.end_date < Date.current}.each do |c| %>
+				  <tr>
+					<td><%= c.course.course_code %> <%= c.course.title %> <%= c.semester %> section <%= c.section %></td>
+					<% s = c.students.find_by(user: current_user) %>
+					<td><%= render 'notification_toggle_button', property: s.notify_assignment_assigned, link: toggle_assigned_notification_path(s) %></td>
+					<td><%= render 'notification_toggle_button', property: s.notify_graded, link: toggle_graded_notification_path(s) %></td>
+					<td><%= render 'notification_toggle_button', property: s.notify_contributor_invite, link: toggle_contributor_notification_path(s) %></td>
+					<td><%= render 'notification_toggle_button', property: s.notify_extension, link: toggle_extension_notification_path(s) %></td>
+					<td><%= render 'notification_toggle_button', property: s.notify_regrade_response, link: toggle_regrade_response_notification_path(s) %></td>
+				  </tr>
+				<% end %>
+			  </tbody>
+			</table>
+		  </div>
+		</div>
+	  </div>
+	  
+	  <hr>
+<% end %>
+
+<% unless current_user.graders.empty? %>
+
+  <center><h2>Grader Notifications</h2></center>
+	    
+  <table class= "table table-hover">
+	<thead>
+	  <tr>
+		<td></td>
+		<th colspan=1><center>Notify me when:</center></th>
+	  </tr>
+	  <tr>
+		<th>Class</th>
+		<th>I am assigned to grade something</th>
+	  </tr>
+	</thead>
+
+	<tbody>
+	  <% current_user.get_grader_classes.select{|k| k.end_date >= Date.current}.each do |c| %>
+		<tr>
+		  <td><%= c.course.course_code %> <%= c.course.title %> <%= c.semester %> section <%= c.section %></td>
+		  <td>
+			<% s = c.graders.where(user: current_user).first %>
+			<%= render 'notification_toggle_button', property: s.notify_grader_assigned, link: toggle_grader_assigned_notification_path(s) %>
+		  </td>
+		</tr>
+	  <% end %>
+	</tbody>
+  </table>
+  
+  <div class="panel-body">
+	<div class="panel panel-default">
+	  <div class="panel-heading">
+		<h4 class="panel-title">
+		  <a data-toggle="collapse" href="#prev_grader_assigned"><strong>Past Classes<span class="caret"></span></strong></a>
+		</h4>
+	  </div>
+	  <div id="prev_grader_assigned" class="panel-collapse collapse">
+		
+			
+		<table class= "table table-hover">
+		  <thead>
+			<tr>
+			  <td></td>
+			  <th colspan=1><center>Notify me when:</center></th>
+			</tr>
+			<tr>
+			  <th>Class</th>
+			  <th>I am assigned to grade something</th>
+			</tr>
+		  </thead>
+
+		  <tbody>
+			<% current_user.get_grader_classes.select{|k| k.end_date < Date.current}.each do |c| %>
+			  <tr>
+				<td><%= c.course.course_code %> <%= c.course.title %> <%= c.semester %> section <%= c.section %></td>
+				<td>
+				  <% s = c.graders.where(user: current_user).first %>
+				  <%= render 'notification_toggle_button', property: s.notify_grader_assigned, link: toggle_grader_assigned_notification_path(s) %>
+				</td>
+			  </tr>
+			<% end %>
+		  </tbody>
+		</table>
+	  </div>
+	</div>
+  </div>
+  <hr>
+<% end %>
+
+<%# Figure out what current user is allowed to grade %>
+<% classes = [] %>
+<% if current_user.admin? %>
+  <% classes = Klass.all %>
+<% else %>
+  <% classes = current_user.get_grader_classes | current_user.get_professor_classes %>
+<% end %>
+
+<% if classes.any? %>
+  <center><h3>By-Assignment Notifications:</h3></center>
+
+	<table class= "table table-hover">
+	  <thead>
+		<tr>
+		  <th>Class</th>
+		  <th>Assignments</th>
+		</tr>
+	  </thead>
+	  <tbody>
+		<% classes.each do |c| %>
+		  <tr>
+			<td><%= c.course.course_code %> <%= c.course.title %> <%= c.semester %> section <%= c.section %></td>
+			<td>
+			  <button class="btn btn-default" data-toggle="collapse" data-target=<%= "#c"+c.id.to_s %>>Assignments</button>
+			</td>
+		  </tr>
+		  
+		  <tr id=<%= "c"+c.id.to_s %> class="collapse">
+			<td colspan=5>
+			  <table class="table table-hover">
+				<thead>
+				  <tr>
+				    <th></th>
+				    <th colspan=2>Notify me when:</th>
+				  </tr>
+				  <tr>
+					<th>Assignment</th>
+					<th>Someone submits/resubmits:</th>
+					<th>Someone requests a regrade:</th>
+				  </tr>
+				</thead>
+				<tbody>
+				  <%# Which assignments can this user grade? %>
+				  <% asds = [] %>
+				  <% if current_user.admin? || current_user.get_professor_classes.include?(c) %>
+					<% asds = c.assigned %>
+				  <% else %>
+					<% asds = current_user.assigned_graders.map{|g| g.assigned}.select{|ad| ad.klass==c} %>
+				  <% end %>
+				  
+				  <%# asds = asds.select{|ad| ad.assignment.student_responsible?} %>
+				  
+				  <% asds.each do |ad| %>
+					<tr>
+					  <td><%= ad.assignment.title %></td>
+					  <td>
+					    <% if ad.assignment.student_responsible? %>
+					      <%= render 'notification_toggle_button', property: current_user.notify_grader_new_submissions.where(assigned: ad).any?, link: toggle_submitted_to_grader_notification_path(ad, return_url: request.original_url)%>
+						<% end %>
+					  </td>
+					  <td>
+					    <%= render 'notification_toggle_button', property: current_user.notify_grader_regrade_request.where(assigned: ad).any?, link: toggle_regrade_request_notification_path(ad, return_url: request.original_url)%>
+					  </td>
+					</tr>
+				  <% end %>
+				  
+				</tbody>
+			  </table>
+			</td>
+		  </tr>
+		<% end %>
+	  </tbody>
+	</table>
+  
+<% end %>
+
+

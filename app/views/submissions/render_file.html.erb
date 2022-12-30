@@ -1,0 +1,26 @@
+<%# DEPRICATED FILE- CURRENTLY UNUSED %>
+
+<title>Kit | File Viewer</title>
+
+<script>
+  
+  function receiveRedirect()
+  {
+    var channel = new BroadcastChannel('kit-file-viewer')
+    channel.onmessage = function(id) {
+	  if(id.data!=<%= @submission.id %>)
+	    window.location.replace('<%= raw submission_render_file_url(raw "\'+id.data+\'") %>')
+	}
+  }
+  
+  receiveRedirect()
+
+</script>
+
+<% if (@submission.assigned.assignment.assignment_type=="student_file" || @submission.assigned.assignment.assignment_type=="professor_file") && @submission.get_file %>
+
+  
+    <iframe style="height:100%;width:100%" src="<%= submission_download_inline_url(@submission) %>.md">If you are reading this, your browser failed to render the file. If you want to view this type of file in the viewer, try downloading a browser add-on that can view this file type and try again.</iframe>
+  
+
+<% end %>

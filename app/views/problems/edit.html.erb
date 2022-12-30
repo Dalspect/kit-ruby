@@ -1,0 +1,200 @@
+<%= content_for :page_title do %>
+  Edit <%= @problem.title %>
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assignments/assignment_crumbs', assignment: @assignment %>
+  <li><%= link_to @assignment.title, @assignment %></li>
+  <li><%= link_to "Rubric", assignment_problems_path(@assignment)%></li>
+  <li class="active"><%= @problem.title%></li>
+</ol>
+
+<h2>Editing Problem "<%=@problem.title%>"</h2>
+
+<%= render 'form', problem: @problem %>
+
+<h3>Rubric Items</h3>
+These become check boxes on the grading page for this problem.
+<table class= "table table-hover">
+	<thead>
+		<tr>
+			<td>Option</td>
+			<td>Value</td>
+			<td>Edit</td>
+			<td>Delete</td>
+			<td>Move</td>
+		</tr>
+	</thead>
+	
+	<tbody>
+		<% @problem.rubric_items.order(location: :asc).each do |r| %>
+			<tr>
+				<td style="word-wrap: break-word;min-width: 300px;max-width: 300px;"><%= r.title %></td>
+				<td><%= r.points %></td>
+				<td><button data-toggle="collapse" data-target=<%= "#item"+r.id.to_s %> class="btn btn-default">Edit</button></td>
+				<td><%= link_to 'Delete', assignment_problem_rubric_item_path(@assignment, @problem, r), method: :delete, class: "btn btn-danger" %></td>
+				<td>
+				  <%= link_to '<span class="glyphicon glyphicon-arrow-down"></span>'.html_safe, assignment_problem_rubric_item_move_down_path(r.problem.assignment, r.problem,r), method: :post, class: "btn btn-default" %>
+				  <%= link_to '<span class="glyphicon glyphicon-arrow-up"></span>'.html_safe, assignment_problem_rubric_item_move_up_path(r.problem.assignment, r.problem,r), method: :post, class: "btn btn-default" %>
+				</td>
+			</tr>
+			<tr id=<%= "item"+r.id.to_s %> class="collapse">
+			  <td colspan=5>
+			    <div>
+				  <%= form_with( url: assignment_problem_rubric_item_path(@assignment,@problem,r), method: :patch) do |form| %>
+					<div class="form-group">
+						<%= form.label "Text" %>
+						<%= form.text_field :title, class: "form-control", value: r.title  %>
+					
+						<%= form.label "Points" %>
+						<%= form.number_field :points, step: :any, class: "form-control", value: r.points %>
+					
+						<%= form.submit "Save", class: "btn btn-success" %>
+					</div>
+				  <% end %>
+			    </div>
+			</td>
+		  </tr>
+		<% end %>
+	</tbody>
+</table>
+
+<button data-toggle="collapse" data-target="#new_option" class="btn btn-primary">Add Option</button>
+
+<div id="new_option" class="collapse">
+	<div class="panel panel-default">
+	<div class="panel-body">
+	<%= form_with( url: assignment_problem_rubric_items_path(@assignment,@problem), method: :create) do |form| %>
+	
+		<div class="form-group">
+			<%= form.label "Text" %>
+			<%= form.text_field :title, class: "form-control"  %>
+		</div>
+
+		<div class="form-group">
+			<%= form.label "Points" %>
+			<%= form.number_field :points, step: :any, class: "form-control" %>
+		</div>
+		
+		<div class="actions">
+			<%= form.submit "Add", class: "btn btn-success" %>
+		</div>
+	<% end %>
+	</div>
+	</div>
+</div>
+
+
+<br><br><br>
+<h3> Reusable Comments </h3>
+<table class="table table-striped" id="reusableCommentsTable">
+  <thead>
+    <tr>
+	  <th>Comment</th>
+	  <th>Delete</th>
+	</tr>
+  </thead>
+  <tbody>
+    <% @problem.reusable_comments.order(comment: :asc).each do |rc| %>
+	  <tr>
+	    <td><%= simple_format(rc.comment) %></td>
+		<td>
+		  <%= link_to assignment_problem_reusable_comment_path(@assignment, @problem, rc), method: :delete, remote: true, class: "btn btn-danger rc-deleter" do %>
+		    <span class="glyphicon glyphicon-trash" aria-alt="Delete"></span>
+		  <% end %>
+		</td>
+	  </tr>
+	<% end %>
+  </tbody>
+</table>
+
+<h4> Add a reusable comment: </h4>
+<%= form_with( url: assignment_problem_reusable_comments_path(@assignment,@problem), model: ReusableComment.new, method: :create, id: "addReusableComment") do |form| %>
+	
+	<div class="form-group">
+		<%= form.label "Comment" %>
+		<%= form.text_area :comment, class: "form-control"  %>
+	</div>
+	
+	<div class="actions">
+		<%= form.submit "Add", class: "btn btn-success" %>
+	</div>
+<% end %>
+
+<%# Handle this form with javascript %>
+<script>
+
+// HTML for a delete button
+// replace _RCID_ with the ID to delete
+deleteButtonHTML = "<%= ( link_to "<span class=\"glyphicon glyphicon-trash\" aria-alt=\"Delete\"></span>".html_safe, assignment_problem_reusable_comment_path(@assignment, @problem, "_RCID_"), method: :delete, remote: true, class: "btn btn-danger rc-deleter" ).gsub("\"","\\\"").html_safe %>"
+
+// ----- Scripts for adding new reusable comments -----
+
+var d = null
+
+addReusableComment.addEventListener('ajax:success', function(event) {
+  var detail = event.detail;
+  var data = detail[0], status = detail[1], xhr = detail[2];
+  d = detail
+  
+  
+  r = reusableCommentsTable.insertRow()
+  
+  c = r.insertCell()
+  c.innerHTML = reusable_comment_comment.value
+  
+  c = r.insertCell()
+  c.innerHTML = deleteButtonHTML.replace("_RCID_",data.id)
+  
+  addDeleteButtonListeners(c.children[0])
+  
+  reusable_comment_comment.value = ""
+  
+  alert("Reusable Comment Added!")
+})
+
+addReusableComment.addEventListener('ajax:error', function(event) {
+  var detail = event.detail;
+  var data = detail[0], status = detail[1], xhr = detail[2];
+  
+  // Come up with an error string
+  str = "Failed to save reusable comment: "
+  for(e in data)
+  {
+    str+=e
+	str+= " " + data[e]
+  }
+  
+  alert(str)
+})
+
+
+// ------ Scripts for deleting reusable comments -----
+
+function addDeleteButtonListeners(db)
+{
+  db.addEventListener('ajax:success', function(event) {
+    var detail = event.detail;
+    var data = detail[0], status = detail[1], xhr = detail[2];
+
+	//Remove this row
+	this.parentElement.parentElement.remove()
+	
+    alert("Reusable comment deleted!")
+  })
+  
+  db.addEventListener('ajax:error', function(event) {
+    var detail = event.detail;
+    var data = detail[0], status = detail[1], xhr = detail[2];
+     
+    alert("Failed to delete reusable comment.")
+  })
+}
+
+deleteButtons = document.getElementsByClassName("rc-deleter")
+for(db of deleteButtons)
+{
+  addDeleteButtonListeners(db)
+}
+
+</script>

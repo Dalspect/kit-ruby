@@ -1,0 +1,20 @@
+<p>
+  Dear <%= @user.get_preferred_first_name() %>,
+  <br><br>
+  
+  <%= @regrade_request.requested_by.get_full_preferred_name %> has requested that their submission for <%= @regrade_request.submission.assigned.assignment.title %> be regraded.
+  
+  They provided the following message:
+  
+  <hr>
+  
+  <%= @regrade_request.reason %>
+  
+  <hr>
+  
+  Once you have reviewed this request and made any necessary corrections, please select "Close Regrade Request" from the submission page and provide a response to the student.
+  
+  You can access the submission <%= link_to 'here.', submission_url(id: @regrade_request.submission_id) %>
+
+</p>
+<%= render 'notification_explanation' %>

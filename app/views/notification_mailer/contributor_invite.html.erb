@@ -1,0 +1,9 @@
+<p>
+  Dear <%= @user.get_preferred_first_name() %>,
+<br><br>
+  You have been invited to work with <%= @submission.contributors.map{|c| c.user.get_preferred_first_name}.to_sentence %> on <%= @submission.assigned.assignment.title %>.
+<br><br>
+  You can accept or reject this invitation <%= link_to 'here', new_submission_url(assigned: @assigned) %>.
+</p>
+
+<%= render 'notification_explanation' %>

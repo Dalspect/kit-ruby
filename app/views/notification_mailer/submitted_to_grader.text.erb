@@ -1,0 +1,7 @@
+Dear <%= @user.get_preferred_first_name() %>,
+  
+<%= @submission.contributors.map{|c| c.user.get_preferred_first_name}.to_sentence %> turned in their submission for <%= @submission.assigned.assignment.title %> in <%= @submission.assigned.klass.course.title %>.
+
+You can view and grade their submission here: <%= submission_grade_url(@submission) %>.
+
+<%= render 'notification_explanation' %>

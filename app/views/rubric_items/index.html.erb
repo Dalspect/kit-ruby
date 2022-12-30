@@ -1,0 +1,33 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Rubric Items</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Problem</th>
+      <th>Title</th>
+      <th>Points</th>
+      <th>Location</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @rubric_items.each do |rubric_item| %>
+      <tr>
+        <td><%= rubric_item.problem %></td>
+        <td><%= rubric_item.title %></td>
+        <td><%= rubric_item.points %></td>
+        <td><%= rubric_item.location %></td>
+        <td><%= link_to 'Show', rubric_item %></td>
+        <td><%= link_to 'Edit', edit_rubric_item_path(rubric_item) %></td>
+        <td><%= link_to 'Destroy', rubric_item, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Rubric Item', new_rubric_item_path %>

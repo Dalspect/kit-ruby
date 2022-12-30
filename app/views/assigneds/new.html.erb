@@ -1,0 +1,59 @@
+<%= content_for :page_title do %>
+  <%= @assigned.assignment.title %> | Assign
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= link_to (@assigned.klass.course.course_code+" "+@assigned.klass.course.title+": "+@assigned.klass.semester+" "+@assigned.klass.section.to_s), klass_assignments_path(@assigned.klass) %></li>
+  <li><%= link_to @assigned.assignment.title, @assigned.assignment %></li>
+  <li class="active">Assign</li>
+</ol>
+
+<h1>Assigning <%= Assignment.find(params[:assignment_id]).title %></h1>
+
+<%= form_with(model: @assigned, url: assignment_assign_url(:assignment_id), local: true) do |form| %>
+  <% if @assigned.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(assigned.errors.count, "error") %> prohibited this assigned from being saved:</h2>
+
+      <ul>
+      <% assigned.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.hidden_field :assignment_id, value: @assigned.assignment_id %>
+  </div>
+
+  <div class="field">
+    <%= form.hidden_field :klass_id, value: @assigned.klass_id %>
+  </div>
+  
+  <div class="form-group">
+    <%= form.label :due_date %>
+    <%= form.datetime_select :due_date, class: "form-control"%>
+  </div>
+  
+<div <%= !@assigned.assignment.student_responsible? ? "hidden=true" : "" %>>
+
+  <div class="form-group">
+    <%= form.label "Maximum contributors to one submission:" %>
+	<%= form.number_field :max_contributors, step: 1, class: "form-control" %>
+  </div>
+  
+  <div class="form-group">
+	<%= form.check_box :allow_late_submissions %>
+	<%= form.label :allow_late_submissions %>
+  </div>
+  
+  <%= render 'resubmission_fields', form: form, assigned: @assigned %>
+  
+</div>
+  
+  <div class="actions">
+    <%= form.submit "Assign", class: "btn btn-success" %>
+  </div>
+<% end %>

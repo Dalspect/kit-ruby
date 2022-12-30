@@ -1,0 +1,14 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>User:</strong>
+  <%= @assigned_grader.user %>
+</p>
+
+<p>
+  <strong>Assigned:</strong>
+  <%= @assigned_grader.assigned %>
+</p>
+
+<%= link_to 'Edit', edit_assigned_grader_path(@assigned_grader) %> |
+<%= link_to 'Back', assigned_graders_path %>

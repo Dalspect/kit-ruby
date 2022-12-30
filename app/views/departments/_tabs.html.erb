@@ -1,0 +1,26 @@
+<center>
+  <h1><%= @department.title %> department</h1>
+</center>
+
+<ul class="nav nav-tabs">
+  
+  <li <%= current==:courses ? "class=active" : "" %>>
+    <%= link_to department_courses_path(@department) do %><span class="glyphicon glyphicon-book" aria-hidden="true"></span>  Courses<% end %>
+  </li>
+  
+  <li <%= current==:files ? "class=active" : "" %>>
+    <%= link_to department_files_path(@department) do %><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>  Files<% end %>
+  </li>
+  
+  <% if @department.is_department_admin?(current_user) %>
+  
+    <li <%= current==:klasses ? "class=active" : "" %>>
+      <%= link_to department_classes_path(@department) do %><span class="glyphicon glyphicon-blackboard" aria-hidden="true"></span>  Classes<% end %>
+    </li>
+  
+    <li <%= current==:settings ? "class=active" : "" %>>
+      <%= link_to edit_department_path(@department) do %><span class="glyphicon glyphicon-cog" aria-hidden="true"></span>  Settings<% end %>
+    </li>
+  
+  <% end %>
+</ul>

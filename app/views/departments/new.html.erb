@@ -1,0 +1,12 @@
+<%= content_for :page_title do %>
+  New Department
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Departments', departments_path %></li>
+  <li class="active">New</li>
+</ol>
+
+<h1>New Department</h1>
+
+<%= render 'form', department: @department %>

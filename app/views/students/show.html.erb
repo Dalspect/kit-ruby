@@ -1,0 +1,224 @@
+<%= content_for :page_title do %>
+  <%= @student.user.get_full_preferred_name %>
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= (@student.klass.course.course_code+" "+@student.klass.course.title+": "+@student.klass.semester+" "+@student.klass.section.to_s)%></li>
+  <li><%= link_to 'Students', klass_students_path(klass_id: @student.klass_id) %></li>
+  <li class="active"><%= @student.user.get_full_preferred_name %> </li>
+</ol>
+
+<center>
+<h1><%= @student.user.get_full_name %></h1>
+<h3><%= @student.klass.course.course_code+" "+@student.klass.course.title %></h3>
+<h4><%= @student.klass.semester+" "+@student.klass.section.to_s %></h4>
+<h5><%= mail_to @student.user.email %></h5>
+</center>
+
+<div class="panel panel-default">
+  <div class="panel panel-heading">
+    <h4> Current Grade: <%= @student.klass.get_student_grade_percent(@student.user).round(2) %>% </h4>
+    <h5> Grade Summary: </h5>
+  </div>
+  <table class="table table-hover">
+	<thead> 
+	  <tr>
+		<th>Category</th>
+		<th>Category Weight</th>
+		<th>Points Earned</th>
+		<th>Percent</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  <% @student.klass.get_grade_categories.each do |cat| %>
+		<tr>
+		  <td> <%= cat.title %> </td>
+		  <td> <%= cat.weight %>% </td>
+		  <td> <%= cat.get_category_grade_points(@student.klass, @student.user) %>/<%= cat.get_category_max_points(@student.klass, @student.user) %> </td>
+		  <td> <%= (cat.get_category_grade_percent(@student.klass, @student.user)*100).round(2) %>% </td>
+		</tr>
+	  <% end %>
+	</tbody>
+  </table>
+</div>
+
+<div class="panel panel-default">
+  <div class="panel panel-heading">
+    <h4><strong>Assignments</strong></h4>
+  </div>
+  <table class="table table-hover">
+    <thead>
+	  <tr>
+	    <th>Assignment</th>
+		<th>Status</th>
+		<th>Worked With</th>
+		<th>Turned In</th>
+		<th>Overdue By</th>
+		<th>Grade</th>
+		<th></th>
+		<th>Extension</th>
+		<th>Resubmissions</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  <% @student.klass.assigned.each do |ad| %>
+	    <% s = ad.get_user_submission(@student.user) %>
+	    <% if s %>
+		  <% if s.graded? %>
+		    <% if s.has_active_regrade_request? %>
+		      <tr class="info">
+			<% else %>
+			  <tr class="success">
+			<% end %>
+		  <% elsif ad.assignment.problems.length==0 %>
+		    <tr class="active">
+		  <% else %>
+		    <tr class="warning">
+		  <% end %>
+		<% else %>
+		  <% if ad.overdue_for?(@student.user) %>
+		    <tr class="danger">
+		  <% else %>
+		    <tr>
+		  <% end %>
+		<% end %>
+		
+		  <td><%= link_to ad.assignment.title, submissions_path(assigned:ad) %></td>
+		  <% if s %>
+		    <% if s.blank? && !ad.assignment.grade_only? %>
+			  <td><%= link_to 'Blank Submission', submission_grade_path(s) %>
+			<% elsif s.professor_uploaded? %>
+			   <td><%= link_to 'Professor Submitted', submission_grade_path(s) %>
+			<% elsif s.turned_in? %>
+		      <td><%= link_to 'Submitted', submission_grade_path(s) %>
+			<% else %>
+			  <td><%= link_to 'Started', submission_grade_path(s) %>
+			<% end %>
+			<% if s.has_active_regrade_request? %>
+			  <p style="color:blue"><b>Regrade Requested</b></p>
+			<% end %>
+			</td>
+		    
+			<td><%= s.contributors.select{|c| c.user!=@student.user}.map{|c| c.user.get_full_preferred_name}.join(", ") %></td>
+		    
+			<% if s.professor_uploaded? || s.blank? || !s.turned_in? %>
+			  <td>N/A</td>
+			  <td>N/A</td>
+			<% else %>
+			  <td><%= s.get_time_turned_in.strftime("%m/%d/%Y at %l:%M%p") %></td>
+			  <td><%= render 'submissions/lateness_label', submission: s %></td>
+			<% end %>
+			
+			<td style="width:20%">
+			  <%= render "submissions/submission_grade_bar", submission: s, assigned: ad %>
+			</td>
+			
+			<td>
+			  <% if (s.contributors & @student.user.contributors).first.feedback_seen? %>
+				<span class="badge info" title="Has Viewed Feedback">
+				  <span class="glyphicon glyphicon-eye-open" aria-alt="Feedback Seen"></span>
+				  <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+				</span>
+			  <% end %>
+			</td>
+			
+		  <% else %>
+		    <% if ad.overdue_for?(@student.user) %>
+			  <td><span style="color:red">No Submission, Overdue</span></td>
+		      <td></td>
+		      <td></td>
+		      <td></td>
+		      <td style="width:20%">
+		        <div class="progress" style="position: relative; text-align: center">
+				</div>
+			  </td>
+			  <td></td>
+			<% else %>
+			  <td>No Submission</td>
+		      <td></td>
+		      <td></td>
+		      <td></td>
+			  <td style="width:20%">
+		        <div class="progress" style="position: relative; text-align: center">
+				</div>
+			  </td>
+		      <td></td>
+			<% end %>
+		  <% end %>
+		  
+		  <% e = ad.extensions.select{|e| e.user==@student.user}.first %>
+		  <% if e %>
+		    <td>
+			  <%= link_to edit_extension_path(e) do %>
+			    <%= link_to "Edit", edit_extension_path(e), class: "btn btn-primary" %>
+			  <%end%>
+			</td>
+		  <% else %>
+		    <td><%= link_to "Grant", new_extension_path(user: @student.user, assigned: ad), class: "btn btn-default" %></td>
+		  <% end %>
+		  
+		  <% resubs = ad.submissions.select{|s| (s.past_contributors & @student.user.past_contributors).any?} %>
+		  <% if resubs.any? %>
+		    <td><a data-toggle="collapse" href=<%= '#asd'+ad.id.to_s %>><%=resubs.size%></a></td>
+		  <% else %>
+		    <td>0</td>
+		  <% end %>
+		</tr>
+		<% if resubs.any? %>
+		  <tr>
+		    <td colspan=8 style="padding: 0 8px;">
+		      <div class="accordian-body collapse" id=<%='asd'+ad.id.to_s %>>
+			    <table class="table table-striped">
+				<thead>
+				  <tr>
+					<th>Status</th>
+					<th>Worked With</th>
+					<th>Turned In</th>
+					<th>Overdue By</th>
+					<th>Grade</th>
+				  </tr>
+				</thead>
+				<tbody>
+				  <% resubs.each do |s| %>
+				    <tr>
+					
+					<% if s.blank? && !ad.assignment.grade_only? %>
+					  <td><center><%= link_to 'Previously Blank Submission', submission_grade_path(s) %></center></td>
+					<% elsif s.professor_uploaded? %>
+					   <td><center><%= link_to 'Previously Professor Submitted', submission_grade_path(s) %></center></td>
+					<% elsif s.turned_in? %>
+					  <td><center><%= link_to 'Previously Submitted', submission_grade_path(s) %></center></td>
+					<% else %>
+					  <td><center><%= link_to 'Previously Started', submission_grade_path(s) %></center></td>
+					<% end %>
+					  
+					<td><%= (s.contributors.select{|c| c.user!=@student.user}.map{|c| c.user.get_full_preferred_name}).join(", ") %></td>
+		    
+					<% if s.professor_uploaded? || s.blank? || !s.turned_in? %>
+					  <td>N/A</td>
+					  <td>N/A</td>
+					<% else %>
+					  <td><%= s.get_time_turned_in.strftime("%m/%d/%Y at %l:%M%p") %></td>
+					  <td><%= render 'submissions/lateness_label', submission: s %></td>
+					<% end %>
+					
+					<td style="width:20%">
+					  <%= render "submissions/submission_grade_bar", submission: s, assigned: ad %>
+					</td>
+					  
+					  
+					</tr>
+				  <% end %>
+				  </tbody>
+				</table>
+			  </div>
+		    </td>
+		  </tr>
+		<% end %>
+	  <% end %>
+	</tbody>
+  </table>
+</div>
+
+<td><%= link_to 'Remove From Class', @student, method: :delete, data: { confirm: 'Are you sure you want to remove this student? All of their work will be lost!' }, class: "btn btn-danger" %></td>

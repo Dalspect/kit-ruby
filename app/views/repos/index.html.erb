@@ -1,0 +1,28 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Repos</h1>
+<h2>Debug page to see active repos, will be removed later!</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th> ID </th>
+	  <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @repos.each do |repo| %>
+      <tr>
+		<td><%= repo.id %></td>
+        <td><%= link_to 'Show', repo %></td>
+        <td><%= link_to 'Edit', edit_repo_path(repo) %></td>
+        <td><%= link_to 'Destroy', repo, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Repo', new_repo_path %>

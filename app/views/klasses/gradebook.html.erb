@@ -1,0 +1,156 @@
+<%= content_for :page_title do %>
+  <%= @klass.course.title+": "+@klass.semester+" "+@klass.section.to_s %> | Gradebook
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= @klass.course.course_code+" "+@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s %></li>
+  <li class="active">Gradebook</li>
+</ol>
+
+<%= render 'klasses/tabs', current: :gradebook, klass: @klass %>
+
+<br>
+
+<%= link_to "Download as CSV", klass_gradebook_csv_path(@klass), class: "btn btn-default" %>
+
+<div class="well pull-right">
+  <input type="checkbox" id="showColors" onchange="toggleColors()">  Show Colors
+</div>
+
+<br><br>
+
+</div> <%# Close page's responsive container so that table can use entire width %>
+<center>
+<div style="width:95vw;height:100vh;overflow:scroll"><%# class="table-responsive">%>
+<table class="table table-bordered" style="border-collapse: separate;">
+  <thead>
+  
+	<tr id="header1" style="position:sticky;top:0;background:white;z-index:1">
+	  <th style="border-right: solid;border-bottom:hidden;background:white;left:0;position:sticky"></th>
+	  <% @klass.get_grade_categories.each do |cat| %>
+	    <th class="text-center" colspan=<%= @klass.assigned.select{|ad| ad.assignment.grade_category==cat}.count + 2%> style="border-right: solid"> <%= cat.title %> (<%=cat.weight%>%) </th>
+	  <% end %>
+	  <th style="border-left:double;border-bottom:hidden"></th>
+	</tr>
+	
+    <tr id="header2" style="position:sticky;top:100px;background:white;z-index:1">
+	  <th style="border-right:solid;background:white;left:0;position:sticky"> Name </th>
+	  
+	  <% max_grade = [] %>
+	  
+	  <% @klass.get_grade_categories.each do |cat| %>
+	  
+		<% @assigneds.select{|ad| ad.assignment.grade_category == cat}.each do |ad| %>
+		  <% max_grade[ad.id] = ad.get_adjusted_max_grade %>
+		  <th><%= link_to submissions_path(assigned: ad), style: "color:black" do %><%= ad.assignment.title %> (/<%= max_grade[ad.id] %>)
+		  <% if ad.hide_grades? %>
+		    <div style="color:red">
+			  <i>Not Counted: Hidden from students!</i>
+			</div>
+		  <% end %>
+		  <% end %>
+		  </th>
+		<% end %>
+		
+		<th style="border-left:dotted"> <%= cat.title %> Total </th>
+		<th style="border-right:solid"> <%= cat.title %> Percent </th>
+		
+	  <% end %>
+	  
+	  <th style="border-left:double">Total Grade</th>
+	</tr>
+	
+  </thead>
+  <tbody>
+    <% @klass.students.map{|s| [s,s.user]}.sort_by{|s,u| u.get_full_real_name_reverse}.each do |s,u| %>
+	  <tr>
+	    
+		<td style="border-right:solid;position:sticky;left:0;background:white;"> <%= link_to (u.get_full_real_name_reverse), student_path(s), style: "color:black" %> </td>
+		
+		<% @klass.get_grade_categories.each do |cat| %>
+          <% @assigneds.select{|ad| ad.assignment.grade_category == cat}.each do |ad| %>
+			<% sub = ad.get_user_submission(u) %>
+			<% if sub %>
+			  <% grade = nil %>
+			  <% if sub.graded? %>
+			    <% grade = sub.get_adjusted_grade_points %>
+			  <% end %>
+			  
+			  
+			  <% if grade %>
+			    <td class="recolorable" data-grade-color=<%= get_color_for_grade(grade / max_grade[ad.id]) %>>
+			  <% else %>
+			    <td>
+			  <% end %>
+			  <%= link_to submission_grade_path(sub), style: (ad.hide_grades? ? "color:black;font-style:italic;" : "color:black") do %>
+			    <% if grade %>
+			      <%= grade %></td>
+				<% else %>
+				  ?
+				<% end %>
+			  <% end %>
+			<% else %>
+			  <td>-</td>
+			<% end %>
+		  <% end %>
+		
+		  <% cat_grade = cat.get_category_grade_points(@klass,u) %>
+		  <% cat_max = cat.get_category_max_points(@klass,u) %>
+		  <% cat_perc = 1.0 %>
+		  <% if cat_max!=0 %>
+		    <% cat_perc = cat_grade/cat_max %>
+		  <% end %>
+		  
+		  <td style="border-left:dotted" class="recolorable" data-grade-color=<%= get_color_for_grade(cat_perc) %> >
+		    <%= cat_grade %>/<%= cat_max %> 
+		  </td>
+		  
+		  <td style="border-right:solid" class="recolorable" data-grade-color=<%= get_color_for_grade(cat_perc) %> > 
+		    <%= (cat_perc* 100).round(2)%>%
+		  </td>
+		
+	    <% end %>
+		
+		<% tg = @klass.get_student_grade_percent(u).round(2) %>
+		
+		<td style="border-left:double" class="recolorable" data-grade-color=<%= get_color_for_grade(tg/100.0) %> > <%= tg %>% </td>
+	  </tr>
+	<% end %>
+  </tbody>
+</table>
+</div>
+</center>
+
+<script>
+
+  // Toggle the coloration of table cells based on grade
+  function toggleColors()
+  {
+    cells = document.getElementsByClassName("recolorable");
+	
+	if(document.getElementById("showColors").checked)
+	{
+	  for(c of cells)
+	  {
+	    c.style.backgroundColor = c.getAttribute("data-grade-color");
+	  }
+	}
+	else
+	{
+	  for(c of cells)
+	  {
+	    c.style.backgroundColor = "white";
+	  }
+	}
+  
+  }
+
+  toggleColors();
+  
+  // Fix bad height on multi-stickied table headers
+  document.getElementById("header2").style.top = document.getElementById("header1").offsetHeight+"px"
+  
+</script>
+
+<div><%# Reopen main layout div %>

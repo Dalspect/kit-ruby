@@ -1,0 +1,70 @@
+<%= content_for :page_title do %>
+  <%=(@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s)%> | Assignments
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= (@klass.course.course_code+" "+@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s)%></li>
+  <li class="active">Assignments</li>
+</ol>
+
+<%= render 'klasses/tabs', current: :assignments, klass: @klass %>
+
+<br>
+
+<span class="pull-left"><h4> Class Assignments: </h4></span>
+<span class="pull-right">
+  <%= link_to new_assignment_path(class: @klass.id), class: "btn btn-success" do %>
+	<span class="glyphicon glyphicon-plus" aria-hidden="true"></span><span class="glyphicon glyphicon-file" aria-hidden="true"></span> New Assignment (for this class)
+  <% end %>
+  
+  <%= link_to show_copy_assignment_path(klass: @klass.id), class: "btn btn-primary" do %>
+     <span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span> Copy Assignment
+  <% end %>
+</span>
+
+<table class="table table-hover">
+<thead>
+  <tr>
+	<td>Assignment</td>
+	<td>Category</td>
+	<td>Points</td>
+	<td>Type</td>
+	<td>Due</td>
+	<td>Graders</td>
+	<td>Status</td>
+	<td>Grading</td>
+  </tr>
+</thead>
+<tbody>
+  <% @klass_assignments.each do |a| %>
+	<%= render 'klasses/assignment_row', a: a %>
+  <% end %>
+</tbody>
+</table>
+
+<br>
+<% if @klass.course %>
+	<p>
+	  <h4> <%=link_to "Assignments Inherited From Course:", @klass.course %> </h4>
+	  <table class="table table-hover">
+		<thead>
+		  <tr>
+			<td>Assignment</td>
+			<td>Category</td>
+			<td>Points</td>
+			<td>Type</td>
+			<td>Due</td>
+			<td>Graders</td>
+			<td>Status</td>
+			<td>Grading</td>
+		  </tr>
+		</thead>
+		<tbody>
+		  <% @course_assignments.each do |a| %>
+			<%= render 'klasses/assignment_row', a: a %>
+		  <% end %>
+		</tbody>
+	  </table>
+	</p>
+<% end %>

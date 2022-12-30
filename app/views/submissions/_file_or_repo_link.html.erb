@@ -1,0 +1,79 @@
+<% if submission.blank? && !submission.assigned.assignment.grade_only? %>
+  <p style="color: red"><strong>Blank Submission</strong></p>
+<% end %>
+
+<% if submission.professor_uploaded? && !submission.assigned.assignment.professor_file? %>
+  <p style="color: red">Professor Uploaded</p>
+<% end %>
+	
+<% case submission.assigned.assignment.assignment_type %>
+<% when "student_file", "professor_file" %>
+  <% if submission.get_files.any? %>
+
+    <div class="panel-group">
+	  <div class="panel panel-default">
+		<div class="panel-heading">
+		  <h4 class="panel-title">
+			<a data-toggle="collapse" href="#submission_files"><strong>Submitted & Feedback Files</strong></a>
+		  </h4>
+		</div>
+		<div id="submission_files" class="panel-collapse collapse in">
+
+  <table class="table table-hover">
+	<thead>
+	  <tr>
+		<th>File Type</th>
+		<th>File name</th>
+		<th>Download/View</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  <% submission.get_files.each do |file, type| %>
+		<% if type==:submitted %>
+		  <tr>
+		  <td>Submitted</td>
+		<% elsif type==:feedback %>
+		  <tr class="info">
+		  <td>Feedback</td>
+		<% end %>
+		  <% file_no_path = file.split(File::SEPARATOR)[-1] %>
+		  <td><%= file_no_path %></td>
+		  <td>
+		    <% if file_no_path.split(".")[-1]=="kiturl" %>
+			  <% file = File.open(file,"rb") %>
+			  <% link = file.read %>
+			  <% file.close() %>
+			  
+			  <%= link_to link, class: "btn btn-default", target: "kit-file" do %>
+				<span class="glyphicon glyphicon-link"></span>
+				<span class="glyphicon glyphicon-globe"></span>
+				Go
+			  <% end %>
+			<% else %>
+			  <div class="btn-group">
+			    <%= link_to submission_download_path(submission, filename: file_no_path), class: "btn btn-default" do %>
+				  <span class="glyphicon glyphicon-save"></span>  Download
+			    <% end %>
+			    <%= link_to submission_download_inline_path(submission, filename: file_no_path), class: "btn btn-default", target: "kit-file" do %>
+				  <span class="glyphicon glyphicon-eye-open"></span>  View
+			    <% end %>
+			  <% end %>
+			</div>
+		  </td>
+		</tr>
+	  <% end %>
+	</tbody>
+  </table>
+  
+  </div></div></div>
+  <% end %>
+  
+<% when "student_repo" %>
+  <% unless submission.blank? %>
+  <p>
+	<strong>Repository URL:</strong>
+	<kbd><%= get_repo_url submission.repo %></kbd>
+  </p>
+  <% end %>
+
+<% end %>

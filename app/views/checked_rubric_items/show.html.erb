@@ -1,0 +1,14 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Rubric item:</strong>
+  <%= @checked_rubric_item.rubric_item %>
+</p>
+
+<p>
+  <strong>Graded problem:</strong>
+  <%= @checked_rubric_item.graded_problem %>
+</p>
+
+<%= link_to 'Edit', edit_checked_rubric_item_path(@checked_rubric_item) %> |
+<%= link_to 'Back', checked_rubric_items_path %>

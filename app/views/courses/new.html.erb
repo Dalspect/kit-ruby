@@ -1,0 +1,12 @@
+<%= content_for :page_title do %>
+  New Course
+<% end %>
+
+<ol class="breadcrumb">
+  <% render 'departments/department_crumbs', department: @department %>
+  <li class="active">New Course</li>
+</ol>
+
+<h1>New Course</h1>
+
+<%= render 'form', course: @course %>

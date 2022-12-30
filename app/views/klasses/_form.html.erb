@@ -1,0 +1,49 @@
+<%= form_with(model: klass, local: true) do |form| %>
+  <% if klass.errors.any? %>
+    <div class="alert alert-danger">
+      <h2><%= pluralize(klass.errors.count, "error") %> prohibited this class from being saved:</h2>
+
+      <ul>
+      <% klass.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <p>
+    <% if @klass.course_id && Course.exists?(@klass.course_id) %>
+	  <%#h "Class inheriting from course: \""+@klass.course.title+"\""%>
+	<% else %>
+	  <h3><b><%# "Class has no associated course!" %></b></h3>
+	<% end %>
+  </p>
+  
+  <div class="field">
+    <%= form.hidden_field :course_id, value: @klass.course_id %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :semester %>
+    <%= form.text_field :semester, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :section %>
+    <%= form.number_field :section, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :start_date %>
+    <%= form.date_select :start_date, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :end_date %>
+    <%= form.date_select :end_date, class: "form-control" %>
+  </div>
+
+  <div class="actions">
+    <%= form.submit "Save Class", class: "btn btn-primary" %>
+  </div>
+<% end %>

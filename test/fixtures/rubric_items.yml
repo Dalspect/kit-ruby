@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  problem: one
+  title: MyString
+  points: 9.99
+  location: 1
+
+two:
+  problem: two
+  title: MyString
+  points: 9.99
+  location: 1

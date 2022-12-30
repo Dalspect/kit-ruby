@@ -1,0 +1,351 @@
+<%= content_for :page_title do %>
+  Grading <%= @graded_problem.problem.assignment.title %>
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assigneds/grading_crumbs', assigned: @submission.assigned %>
+  <li><%= link_to "Submissions", submissions_path(assigned: @submission.assigned) %></li>
+  <li><%= link_to submission_grade_path(@submission) do %>
+    Submission from
+    <%= @submission.contributors.map{|c| c.user.get_full_preferred_name}.join(", ") %>
+	<% if @submission.past_contributors.any? %>
+	  (<s><%= @submission.past_contributors.map{|c| c.user.get_full_preferred_name}.join(", ")%></s>)
+	<% end %>
+	<% end %>
+  </li>
+  <li class="active"><%=@graded_problem.problem.title%></li>
+</ol>
+
+
+<%#= render "submissions/update_viewer_script" %>
+
+<% if !@submission.turned_in? || @submission.point_override? || @submission.hide_rubric? %>
+  <div class="striped-warning">
+<% else %>
+  <div>
+<% end %>
+
+<center>
+  <h2> Grading <%= @submission.assigned.assignment.title %> </h2>
+  <h3> <%= link_to @graded_problem.problem.title, assignment_show_grade_problem_path(@submission.assigned.assignment, @submission.assigned, @graded_problem.problem) %> </h3>
+   
+  <div class="dropdown">
+    <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown">Jump to problem:
+    <span class="caret"></span></button>
+    <ul class="dropdown-menu dropdown-menu-center" style="left: 50%">
+      <% @submission.assigned.assignment.problems.each do |p| %>
+	    <li>
+		  <% gp = @submission.graded_problems.find_by(problem: p) %>
+		  <% if gp %>
+		    <%= link_to p.title, edit_submission_graded_problem_path(@submission, gp) %>
+		  <% else %>
+		    <%= link_to p.title, submission_graded_problems_path(@submission, problem: p.id), method: :post %>
+		  <% end %>
+	    </li>
+	  <% end %>
+    </ul>
+  </div> 
+  
+  <% unless @graded_problem.problem.rubric_items.empty? && @graded_problem.problem.points == 0 %>
+    <h4> Worth <%=@graded_problem.problem.points %> points </h4>
+  <% end %>
+  
+  <% if @submission.blank? && !@submission.assigned.assignment.grade_only? %>
+    <!---<p style="color:red"><strong>Blank Submission</strong></p>---!>
+  <% else %>
+	<% if !@submission.turned_in? %>
+      <div class="alert alert-danger">
+        <b>Assignment Not Turned In!</b><br>
+	    This means that the student(s) may not be finished with their submission.
+		This warning can be hidden using the "Force Turn-In" button on the submission page.
+      </div>
+    <% end %>
+  <% end %>
+  
+  <% if @submission.point_override? %>
+    <div class="alert alert-danger">
+	  <b>Grade overridden!</b><br>
+	  Changes made here won't affect this submission's grade.
+	  <% unless @submission.hide_rubric? %>
+	    Students can still see this rubric and feedback.
+	  <% end %>
+	</div>
+  <% end %>
+  
+  <% if @submission.hide_rubric? %>
+    <div class="alert alert-danger">
+	  <b>Rubric hidden!</b><br>
+	  Students will not be able to see this rubric or any feedback provided here.
+	</div>
+  <% end %>
+  
+  <%#= link_to ("Submission: "+@graded_problem.submission.contributors.map{|c| c.user.get_full_preferred_name}.join(", ")), submission_grade_path(@graded_problem.submission), class: "btn btn-default"  %>
+  
+  <br>
+  <%= render 'submissions/file_or_repo_link', submission: @submission %>
+  <%#= link_to 'File Viewer', submission_render_file_path(@submission), class: "btn btn-default", target: "_blank" %>
+  <%= render 'submissions/open_viewer', submission: @submission %>
+  <br>
+</center>
+
+<% if @graded_problem.problem.grader_notes && !@graded_problem.problem.grader_notes.empty? %>
+  <u>Grader Notes:</u>
+  <%= simple_format @graded_problem.problem.grader_notes %>
+<% end %>
+
+<%= form_with(model: @graded_problem, url: submission_graded_problem_path(@graded_problem.submission, @graded_problem), local: true) do |form| %>
+  
+  
+  <table class="table table-hover">
+    <thead>
+	  <th>?</th>
+	  <th>Description</th>
+	  <th>Points</th>
+    </thead>
+	<tbody>
+	<% first = TRUE %>
+	  <%= form.fields_for "rubric_items" do |items| %>
+		<% @graded_problem.problem.rubric_items.order(location: :asc).each do |i|%>
+		  <tr>
+		    <% if i.checked_rubric_items.find_by(graded_problem: @graded_problem) %>
+			  <div class="form-group">
+			    <td><%= items.check_box i.id, {checked: true, autofocus: first, onchange: "updateTotal()"} %></td>
+			  </div>
+		    <% else %>
+			  <div class="form-group">
+			    <td><%= items.check_box i.id, {autofocus: first, onchange: "updateTotal()"} %></td>
+			  </div>
+		    <% end %>
+			
+			<td><%= i.title %></td>
+			<td><span style="color:<%= i.points < 0 ? "red" : "black"%>"><%= i.points %></span></td>
+			
+		  </tr>
+		  <% first = FALSE %>
+		<% end %>
+	  <% end %>
+    </tbody>
+  </table>
+  
+  <div class="form-group">
+    <%= form.label :comments %>
+    <%= form.text_area :comments, class: "form-control", id: "comments" %>
+  </div>
+  
+  <%# Comment reuser and adder %>
+  <div class="well">
+    <div class="dropdown">
+      <button class="btn btn-primary dropdown-toggle" type="button" id="commentReuser" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" style="width: 100%">
+        Select a reusable comment to insert
+        <span class="caret"></span>
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="commentReuser" id="commentsDropdown" style="width:100%">
+	    <% @graded_problem.problem.reusable_comments.order(comment: :asc).each do |rc| %>
+		  <li>
+		    <div class="row">
+		    <a onclick="reuseComment(<%=rc.id%>)" class="btn btn-default btn-sm col-xs-11"><%= rc.comment %></a>
+			<%= link_to assignment_problem_reusable_comment_path(@graded_problem.problem.assignment, @graded_problem.problem, rc), method: :delete, remote: true, class: "btn btn-danger btn-sm rc-deleter col-xs-1" do %>
+		      <span class="glyphicon glyphicon-trash" aria-alt="Delete"></span>
+		    <% end %>
+			</div>
+		  </li>
+		<% end %>
+      </ul>
+    </div>
+	
+	<hr>
+	
+	<div id="addRCForm" hidden="">
+	  <%= link_to "#", method: :post, class: "btn btn-success", id: "addReusableCommentButton", remote: true do %><%end%>
+	</div>
+	
+	<div id="nothingSelected">
+	  <button class="btn btn-default" disabled="true" style="width:100%">Highlight a comment to add it to re-usable comments</button>
+	</div>
+	
+  </div>
+  
+  <%# Javascript for reusable comments %>
+  <script>
+    // Generate list of comments
+    var commentList = []
+	<% @graded_problem.problem.reusable_comments.each do |rc| %>
+	  commentList[<%= rc.id %>] = <%= rc.comment.inspect.html_safe %>
+	<% end %>
+	
+	// Re-use a selected comment
+    function reuseComment(cID)
+	{
+	  document.getElementById("comments").value += commentList[cID]
+	}
+	
+	// Template of link to send new reusable comment to
+	rcLinkTemplate = "<%= assignment_problem_reusable_comments_path(@graded_problem.problem.assignment,@graded_problem.problem, reusable_comment: {comment: "_COMMENT_"}) %>"
+	
+	// Keep track of highlighted comment in case user wants to re-use it
+	commentToAdd = ""
+    comments.addEventListener('mouseup', function(e) {
+      commentToAdd = comments.value.slice(comments.selectionStart, comments.selectionEnd)
+	  
+	  if(commentToAdd!="")
+	  {
+	    nothingSelected.hidden = true
+		addRCForm.hidden = false
+		addReusableCommentButton.href = rcLinkTemplate.replace("_COMMENT_",encodeURIComponent(commentToAdd))
+		addReusableCommentButton.innerText = "Add "+commentToAdd+" to reusable comments"
+	  }
+	  else
+	  {
+	    nothingSelected.hidden = false
+		addRCForm.hidden = true
+	  }
+    });
+
+
+    // HTML for a delete button
+    // replace _RCID_ with the ID to delete
+    deleteButtonHTML = "<%= ( link_to "<span class=\"glyphicon glyphicon-trash\" aria-alt=\"Delete\"></span>".html_safe, assignment_problem_reusable_comment_path(@graded_problem.problem.assignment, @graded_problem.problem, "_RCID_"), method: :delete, remote: true, class: "btn btn-danger btn-sm rc-deleter col-xs-1").gsub("\"","\\\"").html_safe %>"
+    
+    // ----- Scripts for adding new reusable comments -----
+    addReusableCommentButton.addEventListener('ajax:success', function(event) {
+      var detail = event.detail;
+      var data = detail[0], status = detail[1], xhr = detail[2];
+      d = detail
+      
+	  // Construct new entry in the drop-down
+      commentList[data.id] = data.comment
+	  s = "<div class=\"row\"> <a onclick=\"reuseComment("
+	  s += data.id
+	  s += ")\" class=\"btn btn-default btn-sm col-xs-11\"></a>"
+	  
+	  s += deleteButtonHTML.replace("_RCID_",data.id)
+	  s += "</div>"
+	  
+	  
+	  li = document.createElement("LI")
+	  li.innerHTML = s
+	  
+	  li.children[0].children[0].innerText = data.comment
+	  addDeleteButtonListeners(li.children[0].children[1])
+	  
+	  commentsDropdown.appendChild(li)
+      
+      alert("Reusable Comment Added!")
+    })
+    
+    addReusableCommentButton.addEventListener('ajax:error', function(event) {
+      var detail = event.detail;
+      var data = detail[0], status = detail[1], xhr = detail[2];
+      
+      // Come up with an error string
+      str = "Failed to save reusable comment: "
+      for(e in data)
+      {
+        str+=e
+    	str+= " " + data[e]
+      }
+      
+      alert(str)
+    })
+    
+    
+    // ------ Scripts for deleting reusable comments -----
+    
+    function addDeleteButtonListeners(db)
+    {
+      db.addEventListener('ajax:success', function(event) {
+        var detail = event.detail;
+        var data = detail[0], status = detail[1], xhr = detail[2];
+    
+    	//Remove this row
+    	this.parentElement.parentElement.remove()
+    	
+        alert("Reusable comment deleted!")
+      })
+      
+      db.addEventListener('ajax:error', function(event) {
+        var detail = event.detail;
+        var data = detail[0], status = detail[1], xhr = detail[2];
+         
+        alert("Failed to delete reusable comment.")
+      })
+    }
+    
+    deleteButtons = document.getElementsByClassName("rc-deleter")
+    for(db of deleteButtons)
+    {
+      addDeleteButtonListeners(db)
+    }
+    
+  </script>
+
+  <div class="form-group">
+    <%= form.label :point_adjustment %>
+    <%= form.number_field :point_adjustment, class: "form-control", step: 0.01, onchange: "updateTotal()" %>
+  </div>
+  
+  <h2>
+  <center>
+	<span id="point_total"></span>/<%=@graded_problem.problem.points %> points
+  </center>
+  </h2>
+  
+<%# Script to keep track of point total (for display only) %>
+<script>
+	function updateTotal()
+	{
+		var total = parseFloat(document.getElementById("graded_problem_point_adjustment").value);
+		
+		if(isNaN(total))
+		{
+			total = 0;
+		}
+		
+		<% @graded_problem.problem.rubric_items.order(location: :asc).each do |i|%>
+			if(document.getElementById("<%= "graded_problem_rubric_items_"+i.id.to_s %>").checked)
+			{
+				total += <%= i.points %>;
+			}
+		<% end %>
+		
+		document.getElementById("point_total").innerHTML = total;
+	}
+	
+	updateTotal();
+</script>
+
+<div class="panel panel-success">
+  <div class="panel-heading">
+    <center><b><span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span> Use any button below to save:</b></center>
+  </div>
+  <div class="panel-body">
+    
+    <span class="pull-right">
+      <div class="actions">
+        <%#= form.submit "Next Submission", class: "btn btn-success" %>
+		<%#= form.submit "Next Problem", class: "btn btn-success" %>
+		<%= button_tag(type: "submit", name: "commit", value: "Next Submission", class: "btn btn-success", commit: "Next Submission", accessKey: "j", title: "[accessKey]+j") do %>Next Submission  <span class="glyphicon glyphicon-save-file" aria-hidden="true"></span><%end%>
+		<%= button_tag(type: "submit", name: "commit", value: "Next Problem", class: "btn btn-success", commit: "Next Problem", accessKey: "n", title: "[accessKey]+n") do %>Next Problem  <span class="glyphicon glyphicon-list" aria-hidden="true"></span><span class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span><%end%>
+      </div>
+    </span>
+	<span class="pull-left">
+      <div class="actions">
+        <%#= form.submit "Previous Problem", class: "btn btn-success" %>
+		<%#= form.submit "Previous Submission", class: "btn btn-success" %>
+		<%= button_tag(type: "submit", name: "commit", value: "Previous Problem", class: "btn btn-success", commit: "Previous Problem", accessKey: "b", title: "[accessKey]+b") do %><span class="glyphicon glyphicon-triangle-left" aria-hidden="true"></span><span class="glyphicon glyphicon-list" aria-hidden="true"></span>  Previous Problem<%end%>
+		<%= button_tag(type: "submit", name: "commit", value: "Previous Submission", class: "btn btn-success", commit: "Previous Submission", accessKey: "u", title: "[accessKey]+u") do %><span class="glyphicon glyphicon-open-file" aria-hidden="true"></span>  Previous Submission<%end%>
+      </div>
+    </span>
+	<center>
+	  <div class="actions">
+	    <%= button_tag(type: "submit", name: "commit", value: "Save", class: "btn btn-success", commit: "Save", accessKey: "s", title: "[accessKey]+s") do %> Save <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span><%end%>
+	  </div>
+	</center>
+	
+  </div>
+</div>
+<% end %>
+
+</div>
+
+  

@@ -1,0 +1,367 @@
+<%= content_for :page_title do %>
+  <% if @submission.contributors.any? %>
+    Submission from <%= @submission.contributors.map{|c| c.user.get_full_preferred_name}.join(", ") %>
+  <% else %>
+    Previous Submission
+  <% end %>
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assigneds/grading_crumbs', assigned: @submission.assigned %>
+  <li><%= link_to "Submissions", submissions_path(assigned: @submission.assigned) %></li>
+  <li class="active"> Submission from
+    <%= @submission.contributors.map{|c| c.user.get_full_preferred_name}.join(", ") %>
+	<% if @submission.past_contributors.any? %>
+	  (<s><%= @submission.past_contributors.map{|c| c.user.get_full_preferred_name}.join(", ")%></s>)
+	<% end %>
+  </li>
+</ol>
+
+<%#= render "submissions/update_viewer_script" %>
+
+<h2>Assignment: <%= @submission.assigned.assignment.title %></h2>
+<% unless @submission.contributors.empty? %>
+<h3> Contributors </h3>
+<table class="table table-hover">
+  <thead></thead>
+  <tbody>
+    <% @submission.contributors.each do |c| %>
+	  <tr>
+	    <td><%= link_to (c.user.get_full_preferred_name), c.user.students.select{|s| s.klass==@submission.assigned.klass}.first %></td>
+		<td><%= mail_to c.user.email %></td>
+		<td>
+		  <% if c.feedback_seen? %>
+		    <span class="badge" title="Has Viewed Feedback">
+		      <span class="glyphicon glyphicon-eye-open" aria-alt="Feedback Seen"></span>
+		      <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+			</span>
+		  <% end %>
+		</td>
+		<td>
+		  <% exts = c.user.extensions.where(assigned: @submission.assigned) %>
+		  <% if exts.any? %>
+		    <%= link_to "Edit Extension", edit_extension_path(exts.first), class: "btn btn-default"%>
+		  <% else %>
+		    <%= link_to "Grant Extension", new_extension_path(user: c.user, assigned: @submission.assigned), class: "btn btn-primary" %>
+		  <% end %>
+		</td>
+	    <td><%= link_to "Remove", contributor_path(c), method: :delete, class: "btn btn-danger", data: { confirm: "Are you sure you want to remove this user from this submission? They will still be able to view this submission and any feedback, but it will not count toward their grade." } %></td>
+	  </tr>
+	<% end %>
+  </tbody>
+</table>
+<% end %>
+
+<% unless @submission.past_contributors.empty? %>
+<h4> Past/Removed Contributors </h4>
+<table class="table table-hover">
+  <thead></thead>
+  <tbody>
+    <% @submission.past_contributors.each do |c| %>
+	  <tr>
+	    <td><%= link_to (c.user.get_full_preferred_name), c.user.students.select{|s| s.klass==@submission.assigned.klass}.first %></td>
+		<td><%= mail_to c.user.email %></td>
+	  </tr>
+	<% end %>
+  </tbody>
+</table>
+<% end %>
+
+<div class="well">
+<%= form_with url: contributors_path, method: :create, class: 'form-inline' do |form| %>
+  <div class="form-group">
+	<%= form.label "Email" %>
+	<%= form.text_field :email, class: "form-control" %>
+  </div>
+
+  <div class="form-group">
+	<%= form.hidden_field :submission_id, value: @submission.id %>
+  </div>
+
+  <div class="form-group">
+	<%= form.submit "Add Contributor", class: "btn btn-success" %>
+  </div>
+<% end %>
+</div>
+
+<% if @submission.has_active_regrade_request? %>
+  <% request = @submission.regrade_requests.where(closed: false).first %>
+  <div class="panel panel-primary">
+	<div class="panel-heading">
+	  Regrade request by <%= request.requested_by.get_preferred_first_name %> on <%= request.created_at.strftime("%A, %b %d at %I:%M %p") %>:
+	</div>
+	<div class="panel-body">
+	  <%= request.reason %>
+	  
+	  <hr>
+	  
+	  <button data-toggle="collapse" data-target="#close_request" class="btn btn-primary" onclick="this.style.display = 'none';">Close Regrade Request</button>
+		
+		<div id="close_request" class="collapse">
+		  <%= form_with( url: submission_close_regrade_request_path(@submission,request), model: request, method: :patch) do |form| %>
+	
+			<div class="form-group">
+			  <%= form.label "Please type a response:" %>
+			  <%= form.text_area :response, class: "form-control", placeholder: "Response..."  %>
+			</div>
+
+			<div class="actions">
+			  <%= form.submit "Close Request", class: "btn btn-success" %>
+			</div>
+		  <% end %>
+		</div>
+	</div>
+  </div>
+<% end %>
+
+<%= render 'previous_regrade_requests' %>
+
+<% unless @submission.blank? || @submission.professor_uploaded? || @submission.assigned.assignment.grade_only? %>
+  <% if !@submission.turned_in? %>
+    <p style="color:red">
+      <b>WARNING: Assignment Not Turned In!</b><br>
+	    This means that the student(s) may not be finished with their submission.
+    </p>
+  <% else %>
+    Turned in: <%= @submission.get_time_turned_in.strftime("%A, %b %d at %I:%M%p") %><br>
+    <%= render 'lateness_label', submission: @submission %>
+  <% end %>
+<% end %>
+  
+<br>
+<%= render 'file_or_repo_link', submission: @submission %>
+
+<% if @submission.assigned.assignment.has_uploaded_files? %>
+
+  <button class="btn btn-default" data-toggle="collapse" data-target="#add_files">Add Files</button>
+  <div class="collapse" id="add_files">
+    <div class="well">
+      <%= form_with url: submission_add_file_path(@submission), method: :patch do |form| %>
+        <div class="form-group">
+	      <%= form.file_field :files, class: "form-control", multiple: true %>
+	    </div>
+	    <div class="form-group">
+        <%= form.check_box :is_feedback %>
+        <%= form.label "Feedback Files?" %>
+	    </div>
+	    <div class="form-group">
+	      <%= form.submit "Upload", class: "btn btn-success" %>
+	    </div>
+      <% end %>
+    </div>
+  </div>
+
+  <button class="btn btn-default" data-toggle="collapse" data-target="#add_urls">Add URLs</button>
+  <div class="collapse" id="add_urls">
+    <div class="well">
+      <%= form_with url: submission_add_url_path(@submission), method: :patch do |form| %>
+        <%= render "url_adder", form: form, max_urls: 0 %>
+		<div class="form-group">
+          <%= form.check_box :is_feedback %>
+          <%= form.label "Feedback URLs?" %>
+	    </div>
+	    <div class="form-group">
+	      <%= form.submit "Add URLs", class: "btn btn-success" %>
+	    </div>
+      <% end %>
+    </div>
+  </div>
+
+<% end %>
+
+<br><br>
+
+<%#= link_to 'File Viewer', submission_render_file_path(@submission), class: "btn btn-default", target: "_blank" %>
+<%= render 'open_viewer', submission: @submission %>
+<br>
+
+<div class="panel-group">
+  <div class="panel panel-default">
+	<div class="panel-heading">
+	  <h4 class="panel-title">
+		<a data-toggle="collapse" href="#problems"><strong>Problems<span class="caret"></span></strong></a>
+	  </h4>
+	</div>
+	<div id="problems" class="panel-collapse collapse in">
+	  <div class="panel-body">
+	    <% if @submission.assigned.assignment.problems.any? %>
+	    <table class="table table-hover">
+		  <thead>
+		    <tr>
+			  <th>Problem</th>
+			  <th>Grade</th>
+			  <th>Graded By</th>
+			  <th>Graded On</th>
+			  <th>Grade</th>
+			</tr>
+		  </thead>
+		  <tbody>
+		    <% @submission.assigned.assignment.problems.order(location: :asc).each do |p| %>
+			  <tr>
+			    <td><%= p.title %></td>
+			    <% graded_problem = @submission.graded_problems.find_by(problem: p) %>
+			    <% if graded_problem %>
+			      <% if graded_problem.graded? %>
+				    <td><%= graded_problem.get_grade_points %>/<%= p.points %></td>
+				    <td>
+						<% if graded_problem.grader_id %>
+							<%= graded_problem.grader.get_full_preferred_name %>
+						<% end %>
+					</td>
+					<td>
+					  <% if graded_problem.grader_id %>
+					    <%= graded_problem.updated_at.strftime("%m/%d/%Y at %l:%M%p") %>
+					  <% end %>
+					</td>
+				    <td><%= link_to "Grade", edit_submission_graded_problem_path(@submission, graded_problem), class: "btn btn-default" %></td>
+				  <% else %>
+				    <td>Not Graded</td>
+				    <td></td>
+					<td></td>
+				    <td><%= link_to "Grade", edit_submission_graded_problem_path(@submission, graded_problem), class: "btn btn-success" %></td>
+				  <% end %>
+			    <% else %>
+			      <td>Not Graded</td>
+				  <td></td>
+				  <td></td>
+				  <td><%= link_to "Grade", submission_graded_problems_path(@submission, problem: p.id), method: :post, class: "btn btn-success" %></td>
+			    <% end %>
+			  </tr>
+			<% end %>
+		  </tbody>
+		</table>
+		<% else %>
+		  <center>Assignment rubric has no problems to grade.</center>
+		<% end %>
+	  </div>
+	</div>
+  </div>
+</div>
+
+<div class="panel-group">
+  <div class="panel panel-default">
+	<div class="panel-heading">
+	  <h4 class="panel-title">
+		<a data-toggle="collapse" href="#adjustments"><strong>Grade Adjustments & Overall Comments<span class="caret"></span></strong></a>
+	  </h4>
+	</div>
+	<div id="adjustments" class="panel-collapse collapse in">
+	  <div class="panel-body">
+
+		<%= form_with(model: @submission, url: submission_adjustments_path(@submission)) do |form| %>
+		  <div class="form-group">
+			<%= form.label "?", id: "adjustmentLabel" %>
+			<%= form.number_field :point_adjustment, class: "form-control", step: 0.01 %>
+		  </div>
+
+		  <div class="form-group">
+			<%= form.check_box :point_override, id: "pointOverride", onclick: "changeOverrideHeader()" %>
+			<%= form.label "Override Grade" %>
+		  </div>
+		  
+		  <div class="form-group">
+		    <%= form.check_box :hide_rubric %>
+			<%= form.label "Hide Rubric From Student" %>
+		  </div>
+		  
+		  <% if @submission.assigned.assignment.student_responsible? %>
+		    <div class="form-group">
+			  <%= form.check_box :force_allow_resubmit %>
+			  <abbr title="If checked, all current contributors to this submission will be allowed to resubmit no matter what. Intended for when the wrong thing was submitted." ><%= form.label "Force Allow Resubmission" %></abbr>
+			</div>
+		  <% end %>
+		  
+		  <div class="form-group">
+			<%= form.label :overall_comments %>
+			<%= form.text_area :overall_comments, class: "form-control" %>
+		  </div>
+		  
+		  <div class="form-group">
+			<%= form.label "Scale Grade by Percent" %>
+			<div class="input-group">
+              <%= form.number_field :percent_modifier, class: "form-control", step: 0.01 %>
+              <span class="input-group-addon">%</span>
+            </div> 
+		  </div>
+
+		  <div class="actions">
+			<%= form.submit "Update Adjustments & Overall Comments", class: "btn btn-success" %>
+		  </div>
+		<% end %>
+		
+		<script>
+		  function changeOverrideHeader()
+		  {
+		    if(pointOverride.checked)
+			{
+			  adjustmentLabel.textContent = "Ignore rubric and set grade to:"
+			  adjustmentLabel.style = "color:orange";
+			}
+			else
+			{
+			  adjustmentLabel.textContent = "Point Adjustment (added/subtracted from score):"
+			  adjustmentLabel.style = "color:black";
+			}
+		  }
+		  
+		  changeOverrideHeader();
+		</script>
+	  </div>
+	</div>
+  </div>
+</div>
+
+<% if @submission.graded? %>
+  <%= render 'feedback' %>
+<% end %>
+
+<br><br>
+
+<%= link_to "Delete", submission_path(@submission), method: :delete, class: "btn btn-danger", data: { confirm: 'Are you sure you want to delete this submission?' } %>
+
+<% if @submission.assigned.assignment.student_repo? && @submission.repo %>
+  <br><br>
+
+  <% if @submission.turned_in? %>
+    <%= link_to "Un Turn In", submission_un_turn_in_path, method: :post, class: "btn btn-warning", data: { confirm: 'Are you sure you want to set this submission to not turned in?' } %>
+  <% else %>
+    <%= link_to "Force Turn In", submission_force_turn_in_path, method: :post, class: "btn btn-warning", data: { confirm: 'Are you sure you want to set this submission to turned in?' } %>
+  <% end %>
+  
+  <%= render 'repos/repo_commit_log', repo: @submission.repo %>
+<% end %>
+
+<br><br>
+
+<% if @submission.notified_graded? || @submission.contributors.where(feedback_seen: true).any? %>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title"><strong>
+        Students have been notified that this submission has been graded or have viewed their feedback.
+	  </strong></h4>
+    </div>
+    <div class="panel-body">
+      <p>
+        Students will only be notified that their work has been graded once, 
+	    when their submission first becomes graded or when you unhide grades from students.
+	    You can use this button to reset this so they get notified again.
+	    If the submission is still graded, students will be re-notified immediately.
+		This also causes the submission to be shown as having "unread feedback" again.
+      </p>
+      <%= link_to 'Reset Graded Notification', submission_reset_notification_path(@submission), class: "btn btn-default", method: :post %>
+    </div>
+  </div>
+<% end %>
+
+<% nxt = get_next_submission_from(@submission) %>
+<% prv = get_previous_submission_from(@submission) %>
+<span class="pull-right">
+  <% unless nxt.nil? %>
+    <%= link_to submission_grade_path(nxt), class: "btn btn-default", accessKey: "j", title: "[accessKey]+j" do %>Next Submission  <span class="glyphicon glyphicon-save-file" aria-hidden="true"></span><%end%>
+  <% end %>
+</span>
+<span class="pull-left">
+  <% unless prv.nil? %>
+    <%= link_to submission_grade_path(prv), class: "btn btn-default", accessKey: "u", title: "[accessKey]+u" do %><span class="glyphicon glyphicon-open-file" aria-hidden="true"></span>  Previous Submission<%end%>
+  <% end %>
+</span>

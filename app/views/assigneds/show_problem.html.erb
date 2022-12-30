@@ -1,0 +1,295 @@
+
+<%= content_for :page_title do %>
+  <%= @problem.title %> | Grade
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assigneds/grading_crumbs', assigned: @assigned %>
+  <li><%= link_to 'Problems', assignment_assigned_problems_path(@assigned.assignment, @assigned) %></li>
+  <li class="active"><%= @problem.title %></li>
+</ol>
+
+<center><h2><%= @problem.title %></h2></center>
+
+<center>
+  <input type="checkbox" id="showPrevious" onchange="hideRows()">  Show Previous Submissions
+</center>
+
+<% if @problem.grader_notes && !@problem.grader_notes.empty? %>
+  <u>Grader Notes:</u>
+  <%= simple_format @problem.grader_notes %>
+<% end %>
+
+<%= form_with(url: assignment_grade_problem_path(@assigned.assignment, @assigned, @problem), method: :patch) do |form| %>
+
+<table class="table table-hover" data-toggle="table" data-search="true" maintainMetaData="true" maintainSelected="true" id="subsTable" data-height="300">
+  <thead>
+    <tr>
+      <th data-sortable="true" data-field="user" class="sticky-column">User(s)</th>
+	  <th>View</th>
+	  <% if @assigned.assignment.student_repo? %>
+	    <th data-sortable="true" data-field="repo">Repository</th>
+	  <% elsif @assigned.assignment.student_file? || @assigned.assignment.professor_file? %>
+	    <th>File</th>
+	  <% end %>
+	  
+	  <% @problem.rubric_items.order(:location).each do |i| %>
+	    <%# <th><p class="rotated" style="border-bottom: 1px; transform: rotate(90deg)">TITLE</p></th> %>
+		<th>
+		  <span ><%= i.title %></span>
+		  <br>
+		  <button class="btn btn-default btn-xs" title="Toggle All" type="button" onclick=<%= "toggleAll("+i.id.to_s+")" %>>
+		    <span class="glyphicon glyphicon glyphicon-ok-circle"></span>
+		  </button>
+		</th>
+	  <% end %>
+	  
+	  <script>
+	    //rotates = document.getElementsByClassName('rotated')
+		//for(r of rotates)
+		//{
+		  //t = r.offsetHeight+'px';
+		  //r.style.height = r.offsetWidth+'px';
+		  //r.style.width = '30px'
+		//}
+		//getBorderClientBox().width
+	  </script>
+	  
+	  <th>Point Adjustment</th>
+	  <th>Comments</th>
+	  
+	  <th data-sort-name="_graded_data.raw-grade" data-sortable="true" data-field="grade">Grade</th>
+    </tr>
+  </thead>
+
+  <tbody>
+   <%= form.fields_for "Submissions" do |subItems| %>
+    <% @submissions.order(id: :asc).each do |submission| %>
+	<% updateFunc = "updateTotal("+submission.id.to_s+")" %>
+	<%= subItems.fields_for submission.id.to_s do |items| %>
+      <tr data-prev=<%= submission.contributors.empty? %>>
+	    
+		<%# Contributor names %>
+        <td class="sticky-column"><%= submission.contributors.map{|c| c.user.get_full_preferred_name}.join(", ") %>
+		<% if submission.past_contributors.any? %>
+		  (<s><%= submission.past_contributors.map{|c| c.user.get_full_preferred_name}.join(", ")%></s>)
+		<% end %>
+		</td>
+		
+		<td>
+		  <div class="btn-group-vertical">
+		    <%= link_to 'Submission', submission_grade_path(submission), class: "btn btn-default btn-xs" %>
+			
+			<% graded_problem = submission.graded_problems.find_by(problem: @problem) %>
+			<% if graded_problem %>
+			  <%= link_to "Problem", edit_submission_graded_problem_path(submission, graded_problem), class: "btn btn-default btn-xs" %>
+			<% else %>
+			  <%= link_to "Problem", submission_graded_problems_path(submission, problem: @problem.id), method: :post, class: "btn btn-default btn-xs" %>
+			<% end %>
+		  </div>
+		</td>
+		
+		<% if @assigned.assignment.student_repo? %>
+		  <td>
+		    <% if submission.repo %>
+			  <kbd><%= get_repo_url submission.repo %></kbd>
+			<% end %>
+		  </td>
+		<% elsif @assigned.assignment.student_file? || @assigned.assignment.professor_file? %>
+		  <% unless submission.blank? %>
+		    <% files = submission.get_files %>
+		    <% if files.any? %>
+	          <% if files.length==1 %>
+			    <td>
+			      <div class="btn-group">
+				    <%= link_to submission_download_path(submission, filename: files[0][0].split(File::SEPARATOR)[-1]), class: "btn btn-default btn-sm" do %>
+					  <span class="glyphicon glyphicon-save"></span>
+				    <% end %>
+				    <%= link_to submission_download_inline_path(submission, filename: files[0][0].split(File::SEPARATOR)[-1]), class: "btn btn-default btn-sm", target: "kit-file" do %>
+					  <span class="glyphicon glyphicon-eye-open"></span>
+				    <% end %>
+				  </div>
+			    </td>
+				
+			  <% else %>
+			  
+			    <%# Need to clearly show multiple files without taking up too much room %>
+			    <td>
+				  <div class="dropdown">
+					<button class="btn btn-default btn-sm dropdown-toggle" type="button" data-toggle="dropdown">Multiple
+					<span class="caret"></span></button>
+					<ul class="dropdown-menu", style="width: 600%">
+					  <% files.each do |f, t| %>
+					    <li style="white-space: nowrap;">
+						  <div class="btn-group">
+							<%= link_to submission_download_path(submission, filename: f.split(File::SEPARATOR)[-1]), class: "btn btn-default" do %>
+							  <span class="glyphicon glyphicon-save"></span>
+							<% end %>
+							<%= link_to submission_download_inline_path(submission, filename: f.split(File::SEPARATOR)[-1]), class: "btn btn-default", target: "kit-file" do %>
+							  <span class="glyphicon glyphicon-eye-open"></span>
+							<% end %>
+						    <%= f.split(File::SEPARATOR)[-1] %>
+						  </div>
+						</li>
+					  <% end %>
+					</ul>
+				  </div> 
+				</td>
+			  <% end %>
+			  
+			<% else %>
+			  <td>No file</td>
+			<% end %>
+		  <% else %>
+		    <td><span style="color:red">Blank</span></td>
+		  <% end %>
+	    <% end %>
+		
+		<%= items.fields_for "checkboxes" do |checkboxes| %>
+		
+		<% if graded_problem %>
+		
+		  <% @problem.rubric_items.order(:location).each do |i| %>
+		    <% if i.checked_rubric_items.find_by(graded_problem: graded_problem) %>
+			  <div class="form-group">
+			    <td><%= checkboxes.check_box i.id, {checked: true, onchange: updateFunc, item_id: i.id} %></td>
+			  </div>
+		    <% else %>
+			  <div class="form-group">
+			    <td><%= checkboxes.check_box i.id, {onchange: updateFunc, item_id: i.id} %></td>
+			  </div>
+		    <% end %>
+		  <% end %>
+		
+		
+		  <td><%= items.number_field :point_adjustment, class: "form-control", step: 0.01, onchange: updateFunc, value: graded_problem.point_adjustment %></td>
+		  <td><%= items.text_area :comments, class: "form-control", id: "comments", value: graded_problem.comments, rows: 1 %></td>
+		  
+		<% else %>
+		  
+		  <% @problem.rubric_items.order(:location).each do |i| %>
+		    <td><%= checkboxes.check_box i.id, {onchange: updateFunc, item_id: i.id} %></td>
+		  <% end %>
+		
+		  <td><%= items.number_field :point_adjustment, class: "form-control", step: 0.01, onchange: updateFunc%></td>
+		  <td><%= items.text_area :comments, class: "form-control", id: "comments", rows: 1 %></td>
+		<% end %>
+		
+		<% end %>
+
+		<td><span id=<%= "point_total_"+submission.id.to_s %>></span>/<%=@problem.points %></td>
+		
+		
+      </tr>
+	<% end %>
+    <% end %>
+	<% end %>
+	
+  </tbody>
+</table>
+
+<br>
+
+<div class="panel panel-success">
+  <div class="panel-heading">
+    <center><b><span class="glyphicon glyphicon-floppy-save" aria-hidden="true"></span> Use any button below to save:</b></center>
+  </div>
+  <div class="panel-body">
+    <span class="pull-left">
+      <div class="actions">
+		<%= button_tag(type: "submit", name: "commit", value: "Previous Problem", class: "btn btn-success", commit: "Previous Problem", accessKey: "b", title: "[accessKey]+b") do %><span class="glyphicon glyphicon-triangle-left" aria-hidden="true"></span><span class="glyphicon glyphicon-list" aria-hidden="true"></span>  Previous Problem<%end%>
+      </div>
+    </span>
+    <span class="pull-right">
+      <div class="actions">
+		<%= button_tag(type: "submit", name: "commit", value: "Next Problem", class: "btn btn-success", commit: "Next Problem", accessKey: "n", title: "[accessKey]+n") do %>Next Problem  <span class="glyphicon glyphicon-list" aria-hidden="true"></span><span class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span><%end%>
+      </div>
+    </span>
+	<center>
+	  <div class="actions">
+	    <%= button_tag(type: "submit", name: "commit", value: "Save", class: "btn btn-success", commit: "Save", accessKey: "s", title: "[accessKey]+s") do %> Save <span class="glyphicon glyphicon-refresh" aria-hidden="true"></span><%end%>
+	  </div>
+	</center>
+  </div>
+</div>
+
+<% end %>
+
+<script>
+	
+	
+	function hideRows()
+	{
+	  showPrev = document.getElementById("showPrevious").checked==true
+	  
+	  for(r of document.getElementById('subsTable').rows)
+	  {
+	    if(!showPrev && r.getAttribute("data-prev")=="true")
+		{
+	      r.hidden = "true"
+		}
+		else
+		{
+		  r.hidden=null
+		}
+	  }
+	}
+	
+	$(window).resize(function(){
+	  $('[data-toggle="table"]').bootstrapTable('resetView',{height: document.documentElement.clientHeight});
+	});
+</script>
+
+<%# Script to keep track of point total (for display only) %>
+<script>
+	function updateTotal(sub)
+	{
+		var total = parseFloat(document.getElementById("_Submissions_"+sub+"_point_adjustment").value);
+		
+		if(isNaN(total))
+		{
+			total = 0;
+		}
+		
+		<% @problem.rubric_items.order(location: :asc).each do |i|%>
+			if(document.getElementById("_Submissions_"+sub+"_checkboxes_"+"<%=i.id.to_s %>").checked)
+			{
+				total += <%= i.points %>;
+			}
+		<% end %>
+		
+		document.getElementById("point_total_"+sub).innerHTML = total;
+	}
+	
+	<% @submissions.each do |s| %>
+	  updateTotal(<%= s.id.to_s %>);
+	<% end %>
+</script>
+
+<script>
+  <%# Script for check all buttons %>
+  
+  var allSubs = <%= @submissions.ids.to_s %>;
+  
+  function toggleAll(itemId)
+  {
+    boxes = document.querySelectorAll("[item_id='"+itemId+"']")
+	for(var box of boxes)
+	{
+	  if(box.checked)
+	    box.checked = false
+	  else
+	    box.checked = true
+	}
+	
+	for(var s of allSubs)
+	{
+	  updateTotal(s);
+	}
+	
+  }
+  
+</script>
+
+<%= render "layouts/fix_turbolink_tables", bst_params: "onResetView: function () {hideRows();},height: document.documentElement.clientHeight" %>
+

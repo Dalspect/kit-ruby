@@ -1,0 +1,58 @@
+<h2> Repository Log </h2>
+<% begin %>
+
+  <% g = Git.bare(repo.get_repository_server_directory) %>
+  
+  <% first = true %>
+  
+  <% g.log.each do |commit| %>
+    
+	<% if first %>
+	  <div class="panel panel-primary">
+	  <% first = false %>
+	<% else %>
+	  <div class="panel panel-default">
+	<% end %>
+      <div class="panel-heading">
+	    Commit <%= commit.sha %>
+	  </div>
+	  
+	    <table class="table table-bordered">
+	      <tbody>
+	        <tr>
+		      <td>
+			    <b> Author: </b>
+			  </td>
+			  <td>
+		        <%= commit.author.name %>
+			  </td>
+			  <td>
+			    <%= commit.author.email %>  
+		      </td>
+		    </tr>
+		    <tr>
+		      <td>
+			    <b> Date: </b>
+			  </td>
+			  <td colspan=2>
+			    <%= commit.date %>
+			  </td>
+		    </tr>
+		    <tr>
+		      <td>
+			    <b> Message: </b>
+			  </td>
+			  <td colspan=2>
+			    <%= commit.message %>
+			  </td>
+		    </tr>
+		  </tbody>
+	    </table>  
+	  
+    </div>
+	
+  <% end %>
+
+<% rescue Git::GitExecuteError => e %>
+  <h3> No commits yet... </h3>
+<% end %>

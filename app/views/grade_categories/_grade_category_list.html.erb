@@ -1,0 +1,52 @@
+<%# params: parent = klass or course %>
+
+<div class="panel-group">
+  <div class="panel panel-default">
+	<div class="panel-heading">
+	  <h4 class="panel-title">
+		<a data-toggle="collapse" href="#grade_cats"><strong>Grade Categories<span class="caret"></span></strong></a>
+	  </h4>
+	</div>
+	
+	<div id="grade_cats" class="panel-collapse collapse in">
+	  <div class="panel-body">
+	  
+		<p>
+		  <table class="table table-hover">
+			<thead>
+			  <tr>
+				<td>Category</td>
+				<td>Weight</td>
+				<td>Edit</td>
+				<td>Delete</td>
+			  </tr>
+			</thead>
+			<tbody>
+			  <% parent.grade_category.each do |c| %>
+				<tr>
+				  <td><%= c.title %></td>
+				  <td><%= c.weight %>%</td>
+				  <td><%= link_to 'Edit', edit_grade_category_path(c), class: "btn btn-default" %></td>
+				  <% if c.assignments.empty? %>
+				    <td><%= link_to 'Delete', c, method: :delete, data: { confirm: 'Are you sure you want to delete this category?' }, class: "btn btn-danger" %></td>
+				  <% else %>
+				    <td><%= link_to 'Delete', nil , data: { confirm: 'Assignments are using this grade category.' }, class: "btn btn-danger", disabled: "disabled" %></td>
+				  <% end %>
+				</tr>
+			  <% end %>
+			</tbody>
+		  </table>
+		</p>
+		
+		<p>
+		  <% if parent.is_a?(Klass) %>
+		    <%= link_to 'New Grade Category', new_grade_category_path(class: parent.id), class: "btn btn-primary" %>
+		  <% elsif parent.is_a?(Course) %>
+		    <%= link_to 'New Grade Category', new_grade_category_path(course: parent.id), class: "btn btn-primary" %>
+		  <% end %>
+		</p>
+		
+	  </div>
+	</div>
+  </div>
+</div> 

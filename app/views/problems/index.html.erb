@@ -1,0 +1,42 @@
+<%= content_for :page_title do %>
+  <%= @assignment.title %> | Rubric
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'assignments/assignment_crumbs', assignment: @assignment %>
+  <li><%= link_to @assignment.title, @assignment %></li>
+  <li class="active">Rubric</li>
+</ol>
+
+<h1><%= Assignment.find(params[:assignment_id]).title %> Rubric</h1>
+
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Problem</th>
+      <th>Points</th>
+	  <th>Edit</th>
+	  <th>Delete</th>
+	  <th>Move</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @problems.order(location: :asc).each do |problem| %>
+      <tr>
+        <td><%= problem.title %></td>
+        <td><%= problem.points %></td>
+        <td><%= link_to "Edit", edit_assignment_problem_path(@assignment, problem), class: "btn btn-default" %></td>
+        <td><%= link_to "Delete", assignment_problem_path(@assignment, problem), method: :delete, data: { confirm: "Are you sure?" }, class: "btn btn-danger" %></td>
+		<td><%= link_to '<span class="glyphicon glyphicon-arrow-down"></span>'.html_safe, assignment_problem_move_down_path(problem.assignment, problem), method: :post, class: "btn btn-default" %>
+		<%= link_to '<span class="glyphicon glyphicon-arrow-up"></span>'.html_safe, assignment_problem_move_up_path(problem.assignment, problem), method: :post, class: "btn btn-default" %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to new_assignment_problem_path, class: "btn btn-success" do %><span class="glyphicon glyphicon-plus"></span> New Problem<% end %>
+
+<%= link_to assignment_view_copy_rubric_path(@assignment), class: "btn btn-primary" do %><span class="glyphicon glyphicon-copy"></span> Copy problem from another assignment<%end%>

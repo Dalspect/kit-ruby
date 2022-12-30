@@ -1,0 +1,43 @@
+<center>
+  <h1><%= assigned.assignment.title %></h1>
+  <% if assigned.assignment.student_repo? %>
+    Template Repo: <kbd><%= get_repo_url(assigned.assignment.template_repo) %></kbd>
+  <% end %>
+</center>
+
+<ul class="nav nav-tabs">
+  
+  <li <%= current==:submissions ? "class=active" : "" %>>
+    <%= link_to submissions_path(assigned: assigned) do %><span class="glyphicon glyphicon-inbox" aria-hidden="true"></span>  Submissions<% end %>
+  </li>
+  
+  <li <%= current==:problems ? "class=active" : "" %>>
+    <%= link_to assignment_assigned_problems_path(assigned.assignment, assigned) do %><span class="glyphicon glyphicon-list" aria-hidden="true"></span>  Problems<% end %>
+  </li>
+  
+  <li <%= current==:gradebook ? "class=active" : "" %>>
+    <%= link_to assignment_assigned_gradebook_path(assigned.assignment,assigned) do %><span class="glyphicon glyphicon-calendar" aria-hidden="true"></span>  Gradebook<% end %>
+  </li>
+  
+  <% if (current_user.get_professor_classes.include?(assigned.klass) || current_user.admin?) %>
+  
+  <li <%= current==:submission_settings ? "class=active" : "" %>>
+    <%=link_to assignment_assigned_path(assigned.assignment, assigned) do %>
+	  <span class="glyphicon glyphicon-cog" aria-hidden="true"></span><span class="glyphicon glyphicon-inbox" aria-hidden="true"></span>  Submission Settings
+	<% end %>
+  </li>
+  
+  <li <%= current==:grading_settings ? "class=active" : "" %>>
+    <%=link_to assignment_grade_settings_path(assigned.assignment, assigned) do %>
+	  <span class="glyphicon glyphicon-cog" aria-hidden="true"></span><span class="glyphicon glyphicon-ok" aria-hidden="true"></span>  Grading Settings
+	<% end %> 
+  </li>
+  
+  <span class="pull-right">
+    <%=link_to @assigned.assignment, class: "btn btn-default" do %>
+	  <span class="glyphicon glyphicon-file" aria-hidden="true"></span>  Edit Assignment & Rubric
+    <% end %>
+  </span>
+  
+  <% end %>
+</ul>

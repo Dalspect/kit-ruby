@@ -1,0 +1,18 @@
+<%= content_for :page_title do %>
+  <%=(@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s)%> | Files
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= (@klass.course.course_code+" "+@klass.course.title+": "+@klass.semester+" "+@klass.section.to_s)%></li>
+  <li class="active">Files</li>
+</ol>
+
+<%= render 'klasses/tabs', current: :files, klass: @klass %>
+
+
+<%= render 'repos/repos_files_editor', repo: @klass.repo, title: "Class Files", return_url: klass_files_path(@klass), edit: true %>
+	
+<% if @klass.course %>
+  <%= render 'repos/repos_files_editor', repo: @klass.course.repo, title: "Course Files (shared among classes)", return_url: klass_files_path(@klass), edit: false %>
+<% end %>

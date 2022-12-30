@@ -1,0 +1,83 @@
+<%# params: form, max_urls %>
+
+<h3><%= form.label "Add URLs (links):" %></h3>
+
+<%# Lists of names and urls will be inserted here by the script below %>
+<div class="form-group" id="urls">
+</div>
+
+
+<div class="form-group" id="addUrlControls">
+  <%= form.label "Name:" %>
+  <input class="form-control" type="text" id="urlAdderName" placeholder="My Search Engine">
+  <%= form.label "URL (be sure to include 'http://' or 'https://'!):" %>
+  <input class="form-control" type="url" id="urlAdder" placeholder="http://www.google.com">
+  <button class="btn btn-default" type="button" onclick="addURL()">Add URL</button>
+</div>
+
+<strong><center>URLs to submit:</center></strong>
+<table id="addedURLs" class="table table-hover">
+  <thead>
+	<tr>
+	  <th>Name</th>
+	  <th>URL</th>
+	</tr>
+  </thead>
+  <tbody>
+	
+  </tbody>
+</table>
+
+<script>
+  tbl = document.getElementById("addedURLs")
+  n = document.getElementById("urlAdderName")
+  url = document.getElementById("urlAdder")
+  toSubmit = document.getElementById("urlSubmitField")
+  names = document.getElementById("urlNames")
+  urls = document.getElementById("urls")
+  
+  <% if max_urls > 1 %>
+    lim = <%= max_urls %>
+  <% end %>
+  
+  function addURL()
+  {
+	if(n.value!="" && url.value!="")
+	{
+	  r = tbl.insertRow();
+	  r.className = "success"
+	  e = r.insertCell();
+	
+	  e.innerText = n.value;
+	
+	  e = r.insertCell();
+	  e.innerText = url.value;
+	
+	  i = document.createElement("input");
+	  i.name = "[links][][name]"
+	  i.multiple = true
+	  i.value = n.value
+	  i.type = "hidden"
+	  urls.appendChild(i)
+	
+	  i = document.createElement("input");
+	  i.name = "[links][][url]"
+	  i.multiple = true
+	  i.value = url.value
+	  i.type = "hidden"
+	  urls.appendChild(i)
+	
+	  n.value = "";
+	  url.value = "";
+	  
+	  <% if max_urls > 1 %>
+	  lim--
+	
+	  if(lim<=0)
+	  {
+		document.getElementById("addUrlControls").style.display = "none"
+	  }
+	  <% end %>
+	}
+  }
+</script>

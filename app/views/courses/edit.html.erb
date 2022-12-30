@@ -1,0 +1,26 @@
+<%= content_for :page_title do %>
+  <%= @course.title %> | Settings
+<% end %>
+
+<ol class="breadcrumb">
+  <%= render 'course_crumbs', course: @course %>
+  <li class="active">Settings</li>
+</ol>
+
+<%= render 'tabs', current: :settings %>
+
+<%= render 'form', course: @course %>
+
+<br><br><br>
+
+<% if @course.department.is_department_admin?(current_user) %>
+  <p>
+    <a data-toggle="collapse" href="#delete_hidden" class="btn btn-danger">Delete Course</a>
+    <div id="delete_hidden" class="collapse collapse-in">
+	  <a data-toggle="collapse" href="#delete_hidden2" class="btn btn-danger">Really Delete Course</a>
+      <div id="delete_hidden2" class="collapse collapse-in">
+        <%= link_to 'Really, Really Delete Course', @course, method: :delete, data: { confirm: 'Are you really, really, really sure you want to delete this course?' }, class: "btn btn-warning" %>
+      </div>
+    </div>	
+  </p>
+<% end %>

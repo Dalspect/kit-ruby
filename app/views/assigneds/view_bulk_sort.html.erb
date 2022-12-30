@@ -1,0 +1,149 @@
+<%= content_for :page_title do %>
+  Sort Bulk
+<% end %>
+
+<ol class="breadcrumb">
+  <li><%= link_to 'Classes', klasses_path %></li>
+  <li><%= link_to (@assigned.klass.course.course_code+" "+@assigned.klass.course.title+": "+@assigned.klass.semester+" "+@assigned.klass.section.to_s), klass_assignments_path(@assigned.klass) %></li>
+  <li><%= link_to @assigned.assignment.title, @assigned.assignment %></li>
+  <li><%= link_to "Submissions", submissions_path(assigned: @assigned) %></li>
+  <li class="active">
+    Sort Bulk Submissions
+  </li>
+</ol>
+
+<center>
+<div class="panel panel-default">
+  <div class="panel-body">
+    Kit can attempt to autodetect which file belongs to who based on the file name. 
+	This works by first checking if the file name contains the users last name, followed by their first name, followed by their nickname (if they have one).
+	The dropdowns below will be changed but no permanent changes will be made until you click "Sort".
+	Please confirm that files have been sorted properly before clicking "Sort"!
+  </div>
+  <div class="panel-footer">
+    <button class="btn btn-primary" onclick="autoSort()"> Attempt Autodetect </button>
+  </div>
+</div>
+</center>
+
+<%= form_with(url: assignment_bulk_sort_path(@assigned.assignment, assigned: @assigned), method: :post) do |form| %>
+
+<br>
+
+<%# no_submission = @assigned.klass.students.map{|s| s.user}.select{|u| @assigned.get_user_submission(u)==nil} %>
+<% no_submission = @assigned.klass.students.map{|s| s.user} %>
+
+<table class="table table-hover">
+  <thead>
+    <tr>
+	  <th>File</th>
+	  <th>User</th>
+	</tr>
+  </thead>
+  <tbody>
+  <% unsorted_dir = @assigned.repo.get_repository_read_directory+File::SEPARATOR+"unsorted" %>
+  <% Dir.foreach(unsorted_dir) do |f| %>
+    <% unless File.directory?(unsorted_dir+File::SEPARATOR+f) || f[0]=='.' %>
+    <tr>
+      <td>
+	    <div class="btn-group">
+		  <%= link_to assignment_bulk_uploaded_download_path(@assigned, file: f), class: "btn btn-default", title: "Download" do %>
+			<span class="glyphicon glyphicon-save" aria-alt="Download"></span>
+		  <% end %>
+		  <%= link_to assignment_bulk_uploaded_view_file_path(@assigned, file: f), class: "btn btn-default", title: "View", target: "_blank" do %>
+			<span class="glyphicon glyphicon-eye-open" aria-alt="View"></span>
+		  <% end %>
+		</div>
+	    <%= f %>
+	  </td>
+	  
+	  <td>
+	    <select name="files[<%= f %>]" id="<%= f %>">
+		  <option value="-1" selected="selected">Unsorted</option>
+		  <option value="-2">Delete File</option>
+		  
+		  <% no_submission.each do |u| %>
+			<option value="<%= u.id %>"><%= u.get_full_name %></option>
+		  <% end %>
+		  
+		</select>
+	  </td>
+	  
+	</tr>
+	<% end %>
+  <% end %>
+  </tbody>
+</table>
+
+<div class="form-group">
+  <%= form.check_box :is_feedback %>
+  <%= form.label "Feedback Files?" %>
+</div>
+
+
+<div class="actions">
+  <%= form.submit "Sort", class: "btn btn-success" %>
+</div>
+
+<%# Javascript for auto sort button %>
+<script>
+	
+	files = [<% Dir.foreach(unsorted_dir) do |f| %>
+	  <% unless File.directory?(unsorted_dir+File::SEPARATOR+f) || f[0]=='.' %>
+	    "<%= f %>",
+	  <% end %>
+	<% end %>];
+	
+	users = [<% no_submission.each do |u| %>
+	"<%=u.id%>",
+	<% end %>];
+
+	nickname = [<% no_submission.each do |u| %>
+	"<%=u.preferred_name%>",
+	<% end %>];
+	
+	first = [<% no_submission.each do |u| %>
+	"<%=u.first_name%>",
+	<% end %>];
+	
+	last = [<% no_submission.each do |u| %>
+	"<%=u.last_name%>",
+	<% end %>];
+	
+	// Try to guess which file belongs to who
+	function autoSort()
+	{
+		// Look for last names in file names
+		autoSortHelper(last)
+		
+		// Look for first names
+		autoSortHelper(first)
+		
+		// Look for nicknames
+		autoSortHelper(nickname)
+		
+	}
+	
+	function autoSortHelper(arr)
+	{
+		for(i = 0; i < files.length; i++)
+		{
+			e = document.getElementById(files[i])
+			
+			if(e.value=="-1")
+			{
+				for(u = 0; u < users.length; u++)
+				{
+					if(files[i].toLowerCase().includes(arr[u].toLowerCase()) && arr[u]!="")
+					{
+						e.value = users[u];
+						break;
+					}
+				}
+			}
+		}
+	}
+
+</script>
+
+<% end %>

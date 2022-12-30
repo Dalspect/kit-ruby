@@ -1,0 +1,26 @@
+<center>
+  <strong><h1> <%= @course.title %> </h1></strong>
+  <h4> <%= @course.course_code %> </h4>
+</center>
+
+<ul class="nav nav-tabs">
+  
+  <li <%= current==:assignments ? "class=active" : "" %>>
+    <%= link_to course_path(@course) do %><span class="glyphicon glyphicon-duplicate" aria-hidden="true"></span>  Assignments<% end %>
+  </li>
+  
+  <li <%= current==:files ? "class=active" : "" %>>
+    <%= link_to course_files_path(@course) do %><span class="glyphicon glyphicon-folder-open" aria-hidden="true"></span>  Files<% end %>
+  </li>
+  
+  <li <%= current==:grade_categories ? "class=active" : "" %>>
+    <%= link_to course_grade_categories_path(@course) do %><span class="glyphicon glyphicon-tasks" aria-hidden="true"></span>  Grade Categories<% end %>
+  </li>
+  
+  <li <%= current==:settings ? "class=active" : "" %>>
+    <%= link_to edit_course_path(@course) do %><span class="glyphicon glyphicon-cog" aria-hidden="true"></span>  Settings<% end %>
+  </li>
+  
+  <span class="pull-right"><%= link_to 'Create Class', new_klass_path(:course => @course), class: "btn btn-success" %></span>
+  
+</ul>

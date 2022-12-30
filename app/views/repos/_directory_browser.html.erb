@@ -1,0 +1,312 @@
+<%# Arguments: repo, prepend (array of directories above this one), title, edit (boolean, if true show upload/delete buttons), return_url, secondary (optional), open %>
+
+<% if local_assigns[:edit].nil? %>
+  <% edit = false %>
+<% end %>
+
+<% if local_assigns[:open].nil? %>
+  <% open = false %>
+<% end %>
+
+<%# previously used base 36 hash of prepend but if repo browser is displayed multiple times got the same hash, now using a counter that is shared through the whole page load %>
+<% if @salt %>
+  <% @salt = @salt + 1 %>
+<% else %>
+  <% @salt = 0 %>
+<% end %>
+
+<% collapse_name = "directorybrowser"+@salt.to_s %>
+
+<% if local_assigns[:depth].nil? %>
+  <% depth = 0 %>
+<% end %>
+
+<% files = [] %>
+<% empty_dir = true %>
+
+<%# Collect files in this directory, including those in secondary repo if specified %>
+<% if repo.is_safe_directory?(prepend) &&
+   ((!edit && repo.can_view_files_repo?(current_user, prepend)) ||
+   (edit && repo.can_edit_files_repo?(current_user, prepend))) %>
+
+    <% loc = repo.get_repository_read_directory + prepend.join(File::SEPARATOR) %>
+
+	<% fs = Dir.entries(loc) %>
+	
+	<% if fs.length > 2 %>
+	  <% empty_dir = false %>
+	  <% fs.each do |f| %>
+	    <% if f[0]!='.' %>
+		  <% files.push({name: f, path: loc+File::SEPARATOR+f, rep: repo}) %>
+		<% end %>
+	  <% end %>
+	<% end %>
+
+<% end %>
+
+<% unless local_assigns[:secondary].nil? %>
+  <% if edit %>
+    <% throw "Unsuported Arguments: Cannot edit with a secondary repository!" %>
+  <% end %>
+  <% if secondary.is_safe_directory?(prepend) &&
+   ((!edit && secondary.can_view_files_repo?(current_user, prepend)) ||
+   (edit && secondary.can_edit_files_repo?(current_user, prepend))) %>
+
+    <% loc = secondary.get_repository_read_directory + prepend.join(File::SEPARATOR) %>
+
+	<% fs = Dir.entries(loc) %>
+	
+	<% if fs.length > 2 %>
+	  <% empty_dir = false %>
+	  <% fs.each do |f| %>
+	    <% if f[0]!='.' %>
+		  <% files.push({name: f, path: loc+File::SEPARATOR+f, rep: secondary}) %>
+		<% end %>
+	  <% end %>
+	<% end %>
+
+  <% end %>
+<% end %>
+
+<% files.sort_by!{|f| f[:name].downcase} %>
+
+<%# puts files %>
+
+<% unless empty_dir %>
+	  <li class="list-group-item hoverable-thing">
+		
+		<% for i in 0..(depth-2) do %>
+		  |<span style="opacity:0">----</span>
+		<% end %>
+		<% if depth>0 %>
+		  |----
+		<% end %>
+		
+		<%# Change folder icon between open and closed %>
+		<script>
+		  <%= collapse_name %>Toggled = <%= open %>
+		  function fvToggleIconFor<%= collapse_name %>()
+		  {
+		    if(<%= collapse_name %>Toggled)
+			{
+			  <%= collapse_name %>Toggled = false
+			  document.getElementById("<%= "fvIconFor"+collapse_name %>").className = "glyphicon glyphicon-folder-close"
+			}
+			else
+			{
+			  <%= collapse_name %>Toggled = true
+			  document.getElementById("<%= "fvIconFor"+collapse_name %>").className = "glyphicon glyphicon-folder-open"
+			}
+		  }
+		</script>
+		
+		<a data-toggle="collapse" href=<%='#'+collapse_name%> onclick=<%= "fvToggleIconFor"+collapse_name+"()"%>>
+		  <strong>
+			<span class="<%= "glyphicon glyphicon-folder-"+(open ? "open" : "close") %>" aria-hidden="true" id=<%= "fvIconFor"+collapse_name %>></span>
+			<%=title%>
+			<span class="caret"></span>
+		  </strong>
+		</a>
+		<% unless depth==0 || !edit %>
+		  <span class="pull-right"><%= link_to delete_directory_path(repo, dir: prepend, return_url: return_url), method: :delete, class: "btn btn-danger btn-xs", data: { confirm: 'Are you sure you want to delete the '+title+' directory?' } do %>
+			<span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Delete
+		  <% end %></span>
+		<% end %>
+	  </li>
+
+	
+	<div id=<%= collapse_name %> class="accordian-collapse collapse <%= open ? "in" : "" %>">
+	  
+		
+		<% if edit %>
+		  <li class="list-group-item hoverable-thing">
+			<% for i in 0..(depth-1) do %>
+			  |<span style="opacity:0">----</span>
+			<% end %>
+			|----
+			
+			
+			<button data-toggle="collapse" data-target=<%='#'+collapse_name+"-addfile"%> class="btn btn-primary btn-xs"><span class="glyphicon glyphicon-open-file" aria-hidden="true"></span> Upload File</button>
+		  
+			<button data-toggle="collapse" data-target=<%='#'+collapse_name+"-adddirectory" %> class="btn btn-primary btn-xs">+<span class="glyphicon glyphicon-folder-close" aria-hidden="true"></span> Add Folder</button>
+			
+			<button data-toggle="collapse" data-target=<%='#'+collapse_name+"-addlink" %> class="btn btn-primary btn-xs">+<span class="glyphicon glyphicon-link" aria-hidden="true"></span> Add Link</button>
+		  </li>
+		  
+		  <div id=<%= collapse_name+"-addfile" %> class="collapse">
+			<div class="panel panel-default">
+			  <div class="panel-body">
+				<%= form_with( url: upload_path(repo, dir: prepend), method: :post) do |form| %>
+				
+				  <div class="form-group">
+					<%= form.label "File Upload:" %>
+					<%= form.file_field :file, class: "form-control" %>
+				  </div>
+				  
+				  <div class="field">
+					<%= form.hidden_field :return_url, value: return_url %>
+				  </div>
+				
+				  <div class="actions">
+					<%= form.submit "Upload", class: "btn btn-success" %>
+				  </div>
+				<% end %>
+			  </div>
+			</div>
+		  </div>
+		  
+		  <div id=<%= collapse_name+"-adddirectory" %> class="collapse">
+			<div class="panel panel-default">
+			  <div class="panel-body">
+				<%= form_with( url: add_directory_path(repo, dir: prepend), method: :post) do |form| %>
+				
+				  <div class="form-group">
+					<%= form.label "Name" %>
+					<%= form.text_field :name, class: "form-control" %>
+				  </div>
+				  
+				  <div class="field">
+					<%= form.hidden_field :return_url, value: return_url %>
+				  </div>
+				
+				  <div class="actions">
+					<%= form.submit "Add Directory", class: "btn btn-success" %>
+				  </div>
+				<% end %>
+			  </div>
+			</div>
+		  </div>
+		  
+		  <div id=<%= collapse_name+"-addlink" %> class="collapse">
+			<div class="panel panel-default">
+			  <div class="panel-body">
+				<%= form_with( url: add_link_path(repo, dir: prepend), method: :post) do |form| %>
+				
+				  <div class="form-group">
+					<%= form.label "Name" %>
+					<%= form.text_field :name, class: "form-control" %>
+				  </div>
+				  
+				  <div class="form-group">
+					<%= form.label "Link (be sure to include http: or https:!" %>
+					<%= form.text_field :link, class: "form-control" %>
+				  </div>
+				  
+				  <div class="field">
+					<%= form.hidden_field :return_url, value: return_url %>
+				  </div>
+				
+				  <div class="actions">
+					<%= form.submit "Add Link", class: "btn btn-success" %>
+				  </div>
+				<% end %>
+			  </div>
+			</div>
+		  </div>
+		<% end %>
+		
+		<%# <ul class="list-group"> %>
+		
+			<% files.each do |file| %>
+			  <% f = file[:name] %>
+			  <% fp = file[:path] %>
+			  <% r = file[:rep] %>
+			  
+			  <% if f[0]!='.' %>
+			  
+				
+				
+				<%# fp = loc+File::SEPARATOR+f %>
+				<% if File.directory?(fp) %>
+				  <%# Show directory recursively %>
+				  <%= render 'repos/directory_browser', repo: r, prepend: (prepend+[f]), title: f, edit: edit, depth: depth+1, return_url: return_url %>
+				<% else %>
+				  <%# Show file %>
+				  <li class="list-group-item hoverable-thing">
+					
+					
+					
+					<% for i in 0..(depth-1) do %>
+					  |<span style="opacity:0">----</span>
+					<% end %>
+					|----
+					
+					<% if f.split(".")[-1]=="kiturl" %>
+						<% file = File.open(fp,"rb") %>
+						<% link = file.read %>
+						<% file.close() %>
+					  
+						<%= link_to link, target: "_blank" do %>
+						  <span class="glyphicon glyphicon-link" aria-alt="(Link)"></span> <%= f.split(".").reverse.drop(1).reverse.join(".") %> 
+						<% end %>
+						
+						<div class="pull-right">
+						  
+						  <%= link_to link, target: "_blank" do %>
+						    <span class="glyphicon glyphicon-globe" aria-hidden=true style="display:inline;top:0"></span>
+						  <% end %>
+						  
+						  &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp &nbsp 
+						  
+						  <% if edit %>
+						    <%= link_to delete_file_path(r, dir: prepend+[f], return_url: return_url), method: :delete, class: "btn btn-danger btn-xs", data: { confirm: 'Are you sure you want to delete the file '+f+'?' } do %>
+						      <span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Delete
+						    <% end %>
+					      <% end %>
+						
+						</div>
+					<% else %>
+					
+					  <%= link_to view_file_path(r, dir: prepend+[f]), title: "View", target: "_blank" do %>
+					
+						<span class="glyphicon glyphicon-file" aria-alt="(File)"></span>
+
+						<%= f %>
+						
+					  <% end %>
+					  
+					  <%#<hs style="width:1%;display:inline-block"></hs>%>
+					  
+					  
+					  <div class="pull-right">
+					    <%= link_to view_file_path(r, dir: prepend+[f]), title: "View", target: "_blank" do %>
+					      <span class="glyphicon glyphicon-eye-open" style="display:inline;top:0" aria-alt="View"></span>
+						<% end %>
+						
+						&nbsp &nbsp &nbsp &nbsp
+					    
+						<%= link_to download_path(r, dir: prepend+[f]), title: "Download" do %>
+						  <span class="glyphicon glyphicon-save" style="display:inline;top:0" aria-alt="Download"></span>
+					    <% end %>
+					    
+						&nbsp &nbsp &nbsp &nbsp
+						
+					    <% if edit %>
+					      <%= link_to delete_file_path(r, dir: prepend+[f], return_url: return_url), method: :delete, class: "btn btn-danger btn-xs", data: { confirm: 'Are you sure you want to delete the file '+f+'?' } do %>
+					        <span class="glyphicon glyphicon-trash" aria-hidden="true"></span> Delete
+						  <% end %>
+						<% end %>
+					  </div>
+					  
+				  <% end %>
+				  
+				  
+				  
+				<% end %>
+				
+				</li>
+			  <% end %>
+
+			<% end %>
+			
+			
+			<%# </ul> %>
+			
+		
+	  
+	</div>
+
+	
+	
+	
+<% end %>
